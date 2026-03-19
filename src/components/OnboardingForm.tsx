@@ -86,9 +86,24 @@ export default function OnboardingForm({ onComplete }: Props) {
 
     setSubmitting(true);
 
+    const email = form.email.toLowerCase().trim();
+
+    // Check if profile already exists
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("email")
+      .eq("email", email)
+      .single();
+
+    if (existing) {
+      setError("This email has already been registered. You'll receive your matches soon!");
+      setSubmitting(false);
+      return;
+    }
+
     // Send OTP to email via Supabase Auth
     const { error: authError } = await supabase.auth.signInWithOtp({
-      email: form.email.toLowerCase().trim(),
+      email,
     });
 
     if (authError) {
@@ -135,7 +150,7 @@ export default function OnboardingForm({ onComplete }: Props) {
 
     const { data, error: dbError } = await supabase
       .from("profiles")
-      .insert([profileData])
+      .upsert([profileData], { onConflict: "email" })
       .select()
       .single();
 
