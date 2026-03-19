@@ -26,8 +26,8 @@ function formatProfile(p: Profile): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const { profileId, messages } = (await req.json()) as {
-      profileId: string;
+    const { profileEmail, messages } = (await req.json()) as {
+      profileEmail: string;
       messages: ChatMessage[];
     };
 
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     const { data: currentUser } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", profileId)
+      .eq("email", profileEmail)
       .single();
 
     if (!currentUser) {
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     const { data: allProfiles } = await supabase
       .from("profiles")
       .select("*")
-      .neq("id", profileId);
+      .neq("email", profileEmail);
 
     const otherProfiles = (allProfiles || []) as Profile[];
 

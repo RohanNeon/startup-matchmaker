@@ -53,7 +53,7 @@ export default function ChatInterface({ profile }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          profileId: profile.id,
+          profileEmail: profile.email,
           messages: newMessages,
         }),
       });
