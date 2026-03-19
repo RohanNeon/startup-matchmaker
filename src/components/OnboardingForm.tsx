@@ -47,8 +47,20 @@ export default function OnboardingForm({ onComplete }: Props) {
       setEmailError("This email is not on the guest list. Please use the email you registered with on Luma.");
       setEmailValid(false);
     } else {
-      setEmailError("");
-      setEmailValid(true);
+      // Check if profile already exists
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("email", email.toLowerCase().trim())
+        .single();
+
+      if (existing) {
+        setEmailError("This email has already been registered. You'll receive your matches soon!");
+        setEmailValid(false);
+      } else {
+        setEmailError("");
+        setEmailValid(true);
+      }
     }
     setCheckingEmail(false);
   }
