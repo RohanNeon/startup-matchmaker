@@ -16,11 +16,9 @@ const supabase = createClient(
 function formatProfile(p: Profile): string {
   return [
     `- ${p.name} (${p.role} @ ${p.company})`,
-    `  Building: ${p.what_building}`,
-    `  Stage: ${p.stage}`,
+    p.what_building ? `  Building: ${p.what_building}` : "",
     `  Looking for: ${p.looking_for.join(", ")}`,
     `  Can offer: ${p.can_offer.join(", ")}`,
-    `  Wants to walk away with: ${p.walk_away_with}`,
   ].join("\n");
 }
 

@@ -5,7 +5,6 @@ import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { Profile } from "@/lib/types";
 
-const STAGES = ["Idea", "Pre-revenue", "Revenue", "Scaling"];
 const OPTIONS = ["Investor", "Co-founder", "Customers", "Talent", "Peers"];
 
 interface Props {
@@ -20,10 +19,8 @@ export default function OnboardingForm({ onComplete }: Props) {
     company: "",
     role: "",
     what_building: "",
-    stage: "",
     looking_for: [] as string[],
     can_offer: [] as string[],
-    walk_away_with: "",
   });
   const [otp, setOtp] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -45,10 +42,6 @@ export default function OnboardingForm({ onComplete }: Props) {
 
     if (!form.email || !form.email.includes("@")) {
       setError("Please enter a valid email address.");
-      return;
-    }
-    if (!form.stage) {
-      setError("Please select a stage.");
       return;
     }
     if (form.looking_for.length === 0) {
@@ -104,11 +97,9 @@ export default function OnboardingForm({ onComplete }: Props) {
       name: form.name,
       company: form.company,
       role: form.role,
-      what_building: form.what_building,
-      stage: form.stage,
+      what_building: form.what_building || "",
       looking_for: form.looking_for,
       can_offer: form.can_offer,
-      walk_away_with: form.walk_away_with,
     };
 
     const { data, error: dbError } = await supabase
@@ -257,34 +248,25 @@ export default function OnboardingForm({ onComplete }: Props) {
             required
           />
 
-          <Field
-            label="What are you building?"
-            value={form.what_building}
-            onChange={(v) => setForm({ ...form, what_building: v })}
-            placeholder="An AI-powered platform for..."
-            required
-          />
-
           <div>
-            <label className="block text-sm font-medium text-neon-dark/80 mb-2">
-              Stage
+            <label className="block text-sm font-medium text-neon-dark/80 mb-1">
+              What are you building? <span className="text-neon-dark/40 font-normal">(optional)</span>
             </label>
-            <div className="flex flex-wrap gap-2">
-              {STAGES.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setForm({ ...form, stage: s })}
-                  className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
-                    form.stage === s
-                      ? "bg-neon-dark text-neon border-neon-dark"
-                      : "bg-white text-neon-dark/70 border-neon-dark/20 hover:border-neon-dark/40"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+            <textarea
+              value={form.what_building}
+              onChange={(e) => {
+                const words = e.target.value.trim().split(/\s+/).filter(Boolean);
+                if (words.length <= 100 || e.target.value.length < form.what_building.length) {
+                  setForm({ ...form, what_building: e.target.value });
+                }
+              }}
+              placeholder="An AI-powered platform for..."
+              rows={3}
+              className="w-full px-4 py-2.5 rounded-xl border border-neon-dark/15 text-sm focus:outline-none focus:ring-2 focus:ring-neon-dark focus:border-transparent placeholder:text-neon-dark/30 bg-white resize-none"
+            />
+            <p className="text-xs text-neon-dark/40 mt-1 text-right">
+              {form.what_building.trim().split(/\s+/).filter(Boolean).length}/100 words
+            </p>
           </div>
 
           <MultiSelect
@@ -299,14 +281,6 @@ export default function OnboardingForm({ onComplete }: Props) {
             options={OPTIONS}
             selected={form.can_offer}
             onToggle={(v) => toggleArray("can_offer", v)}
-          />
-
-          <Field
-            label="One thing you want to walk away with today"
-            value={form.walk_away_with}
-            onChange={(v) => setForm({ ...form, walk_away_with: v })}
-            placeholder="A warm intro to a Series A investor"
-            required
           />
 
           {error && (
