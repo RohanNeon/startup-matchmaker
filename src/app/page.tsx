@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Profile } from "@/lib/types";
 import OnboardingForm from "@/components/OnboardingForm";
-import ChatInterface from "@/components/ChatInterface";
+import WaitingScreen from "@/components/WaitingScreen";
 
 export default function Home() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -12,18 +12,18 @@ export default function Home() {
 
   useEffect(() => {
     async function checkExistingProfile() {
-      const savedId = localStorage.getItem("profile_id");
-      if (savedId) {
+      const savedEmail = localStorage.getItem("profile_email");
+      if (savedEmail) {
         const { data } = await supabase
           .from("profiles")
           .select("*")
-          .eq("id", savedId)
+          .eq("email", savedEmail)
           .single();
 
         if (data) {
           setProfile(data as Profile);
         } else {
-          localStorage.removeItem("profile_id");
+          localStorage.removeItem("profile_email");
         }
       }
       setLoading(false);
@@ -44,5 +44,5 @@ export default function Home() {
     return <OnboardingForm onComplete={setProfile} />;
   }
 
-  return <ChatInterface profile={profile} />;
+  return <WaitingScreen profile={profile} />;
 }

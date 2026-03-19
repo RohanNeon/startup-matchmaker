@@ -62,11 +62,12 @@ ${formatProfile(currentUser as Profile)}
 ${otherProfiles.length > 0 ? otherProfiles.map(formatProfile).join("\n\n") : "No other attendees have registered yet."}
 
 ## Instructions
-- Greet the user warmly by their first name on your first message. Briefly mention what you know about them and offer to help find matches.
-- When asked who to meet, suggest specific people by name with clear reasoning based on mutual interests, complementary needs (e.g., someone looking for investors matched with someone who can offer investment), or shared domains.
-- Be concise and actionable. Use the attendee data to give specific, personalized recommendations.
-- If no attendees match a query, say so honestly and suggest what to look for.
-- Keep a warm, professional tone appropriate for a startup networking event.`;
+- Keep responses SHORT — 2-4 sentences max per recommendation. No fluff.
+- Greet briefly by first name on first message. One line about them, then ask how you can help.
+- When suggesting people, use this format: **Name** (Role @ Company) — one line on why they're a match.
+- Max 3 recommendations per response unless asked for more.
+- No long intros, no filler, no "Great question!". Just the matches and why.
+- If no one matches, say so in one sentence.`;
 
     const completion = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
@@ -82,7 +83,7 @@ ${otherProfiles.length > 0 ? otherProfiles.map(formatProfile).join("\n\n") : "No
           : []),
       ],
       temperature: 0.7,
-      max_tokens: 1024,
+      max_tokens: 512,
     });
 
     const reply = completion.choices[0]?.message?.content || "Sorry, I couldn't generate a response.";

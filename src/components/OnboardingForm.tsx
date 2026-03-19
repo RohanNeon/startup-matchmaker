@@ -13,7 +13,9 @@ interface Props {
 }
 
 export default function OnboardingForm({ onComplete }: Props) {
+  const [step, setStep] = useState<"form" | "otp">("form");
   const [form, setForm] = useState({
+    email: "",
     name: "",
     company: "",
     role: "",
@@ -23,6 +25,7 @@ export default function OnboardingForm({ onComplete }: Props) {
     can_offer: [] as string[],
     walk_away_with: "",
   });
+  const [otp, setOtp] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -35,10 +38,15 @@ export default function OnboardingForm({ onComplete }: Props) {
     }));
   }
 
+  // Step 1: Validate form and send OTP
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
+    if (!form.email || !form.email.includes("@")) {
+      setError("Please enter a valid email address.");
+      return;
+    }
     if (!form.stage) {
       setError("Please select a stage.");
       return;
@@ -53,9 +61,59 @@ export default function OnboardingForm({ onComplete }: Props) {
     }
 
     setSubmitting(true);
+
+    // Send OTP to email via Supabase Auth
+    const { error: authError } = await supabase.auth.signInWithOtp({
+      email: form.email.toLowerCase().trim(),
+    });
+
+    if (authError) {
+      setError(authError.message);
+      setSubmitting(false);
+      return;
+    }
+
+    setSubmitting(false);
+    setStep("otp");
+  }
+
+  // Step 2: Verify OTP and save profile
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+
+    const email = form.email.toLowerCase().trim();
+
+    // Verify the OTP
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      email,
+      token: otp,
+      type: "email",
+    });
+
+    if (verifyError) {
+      setError("Invalid code. Please try again.");
+      setSubmitting(false);
+      return;
+    }
+
+    // OTP verified — save profile
+    const profileData = {
+      email,
+      name: form.name,
+      company: form.company,
+      role: form.role,
+      what_building: form.what_building,
+      stage: form.stage,
+      looking_for: form.looking_for,
+      can_offer: form.can_offer,
+      walk_away_with: form.walk_away_with,
+    };
+
     const { data, error: dbError } = await supabase
       .from("profiles")
-      .insert([form])
+      .insert([profileData])
       .select()
       .single();
 
@@ -65,10 +123,83 @@ export default function OnboardingForm({ onComplete }: Props) {
       return;
     }
 
-    localStorage.setItem("profile_id", data.id);
+    localStorage.setItem("profile_email", email);
     onComplete(data as Profile);
   }
 
+  // OTP verification screen
+  if (step === "otp") {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-6 sm:mb-8">
+            <Image
+              src="/neon-logo.png"
+              alt="Neon Fund"
+              width={56}
+              height={56}
+              className="mx-auto mb-3"
+            />
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neon-dark">
+              Verify Your Email
+            </h1>
+            <p className="mt-1.5 text-sm sm:text-base text-neon-dark/60">
+              We sent a verification code to{" "}
+              <span className="font-medium text-neon-dark">{form.email}</span>
+            </p>
+          </div>
+
+          <form
+            onSubmit={handleVerifyOtp}
+            className="bg-white rounded-2xl shadow-sm border border-neon-dark/10 p-5 sm:p-8 space-y-5"
+          >
+            <div>
+              <label className="block text-sm font-medium text-neon-dark/80 mb-1">
+                Verification code
+              </label>
+              <input
+                type="text"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                placeholder="Enter 6-digit code"
+                required
+                maxLength={6}
+                className="w-full px-4 py-3 rounded-xl border border-neon-dark/15 text-center text-lg tracking-[0.3em] font-mono focus:outline-none focus:ring-2 focus:ring-neon-dark focus:border-transparent placeholder:text-neon-dark/30 bg-white"
+              />
+            </div>
+
+            {error && (
+              <p className="text-sm text-red-700 bg-red-50 rounded-lg px-4 py-2">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={submitting || otp.length < 6}
+              className="w-full py-3 px-4 bg-neon-dark text-neon rounded-xl font-semibold hover:bg-neon-dark/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submitting ? "Verifying..." : "Verify & Continue"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setStep("form");
+                setOtp("");
+                setError("");
+              }}
+              className="w-full text-sm text-neon-dark/50 hover:text-neon-dark/70 transition-colors"
+            >
+              ← Back to form
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // Main form
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12">
       <div className="w-full max-w-lg">
@@ -92,6 +223,15 @@ export default function OnboardingForm({ onComplete }: Props) {
           onSubmit={handleSubmit}
           className="bg-white rounded-2xl shadow-sm border border-neon-dark/10 p-5 sm:p-8 space-y-5 sm:space-y-6"
         >
+          <Field
+            label="Email"
+            value={form.email}
+            onChange={(v) => setForm({ ...form, email: v })}
+            placeholder="you@example.com"
+            required
+            type="email"
+          />
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field
               label="Full name"
@@ -180,7 +320,7 @@ export default function OnboardingForm({ onComplete }: Props) {
             disabled={submitting}
             className="w-full py-3 px-4 bg-neon-dark text-neon rounded-xl font-semibold hover:bg-neon-dark/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
           >
-            {submitting ? "Saving..." : "Find My Matches"}
+            {submitting ? "Sending verification..." : "Find My Matches"}
           </button>
         </form>
       </div>
@@ -194,12 +334,14 @@ function Field({
   onChange,
   placeholder,
   required,
+  type = "text",
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
   required?: boolean;
+  type?: string;
 }) {
   return (
     <div>
@@ -207,7 +349,7 @@ function Field({
         {label}
       </label>
       <input
-        type="text"
+        type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}

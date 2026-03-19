@@ -1,7 +1,23 @@
--- Run this in the Supabase SQL Editor to create the profiles table
+-- =============================================
+-- Neon Fund Startup Matchmaker — Database Schema v2
+-- Run this in Supabase SQL Editor
+-- =============================================
 
-create table if not exists profiles (
-  id uuid default gen_random_uuid() primary key,
+-- 1. Create luma_list table (attendee list from Luma)
+create table if not exists luma_list (
+  email text primary key,
+  linkedin_url text
+);
+
+alter table luma_list enable row level security;
+create policy "Allow all reads on luma_list" on luma_list for select using (true);
+create policy "Allow service role inserts on luma_list" on luma_list for insert with check (true);
+
+-- 2. Drop old profiles table and recreate with email as PK
+drop table if exists profiles cascade;
+
+create table profiles (
+  email text primary key,
   name text not null,
   company text not null,
   role text not null,
@@ -13,8 +29,6 @@ create table if not exists profiles (
   created_at timestamptz default now()
 );
 
--- Enable Row Level Security (permissive for now, tighten when auth is added)
 alter table profiles enable row level security;
-
-create policy "Allow all reads" on profiles for select using (true);
-create policy "Allow all inserts" on profiles for insert with check (true);
+create policy "Allow all reads on profiles" on profiles for select using (true);
+create policy "Allow all inserts on profiles" on profiles for insert with check (true);
