@@ -3,7 +3,7 @@
 # Neon Fund — Startup Matchmaker
 
 ## What this is
-AI-powered matchmaking for startup networking events (~50 attendees). Attendees fill a verified profile form → at a set time, each attendee receives an email with their top 5-6 best matches including LinkedIn profiles and one-line reasoning.
+AI-powered matchmaking for startup networking events (~100 attendees). Attendees fill a verified profile form → at a set time, each attendee receives an email with their top 5-6 best matches including LinkedIn profiles and one-line reasoning.
 
 ## Architecture pivot (v2)
 - **v1 (built, kept for future):** Chat interface with Groq LLM for live matchmaking Q&A
@@ -13,7 +13,8 @@ AI-powered matchmaking for startup networking events (~50 attendees). Attendees 
 - **Frontend**: Next.js (App Router), React, TypeScript, Tailwind CSS
 - **Database**: Supabase (Postgres + REST API + Auth + RLS)
 - **Auth**: Supabase email OTP
-- **Email delivery**: TBD (Resend / Supabase / other)
+- **Email SMTP**: Brevo (free tier, 300 emails/day) — connected to Supabase custom SMTP
+- **Email delivery (match emails)**: TBD (Brevo transactional API or Supabase)
 - **Match algorithm**: TBD
 - **Font**: Inter (Google Fonts)
 - **Deploy**: Vercel (startup-matchmaker-kappa.vercel.app)
@@ -35,16 +36,15 @@ Logo: `public/neon-logo.png` (also `.svg`). Lime-green "N" mark on transparent b
 ### `luma_list` table
 - email (text, PK) — email used for Luma registration
 - linkedin_url (text) — LinkedIn profile URL
+- **100 attendees uploaded** from luma_list.csv (source file in project root)
 
 ### `profiles` table
 - email (text, PK) — links to luma_list.email
-- name, company, role, what_building, stage (text)
+- name, company, role (text, NOT NULL)
+- what_building (text, nullable/optional)
 - looking_for, can_offer (text[])
-- walk_away_with (text)
 - created_at (timestamptz)
-
-### Old profiles table (v1)
-- Had uuid PK `id`, no email column — being migrated to email-based PK
+- **Removed:** stage, walk_away_with (dropped from schema)
 
 ## Core data flow (v2)
 1. Organizer uploads Luma CSV (email + LinkedIn) → stored in `luma_list`
@@ -89,13 +89,12 @@ src/
 ```
 
 ## Onboarding form fields
-- Email (text, validated against luma_list in real-time)
-- Full name, Company, Role (text inputs)
-- What are you building? (text)
-- Stage: Idea / Pre-revenue / Revenue / Scaling (single-select chips)
-- Looking for: Investor / Co-founder / Customers / Talent / Peers (multi-select chips)
-- Can offer: same options (multi-select chips)
-- One thing you want to walk away with today (text)
+- Email (text, validated against luma_list on blur, checked for existing profile before OTP)
+- Full name, Company, Role (text inputs, required)
+- What are you building? (textarea, optional, 100-word limit)
+- Looking for: Investor / Co-founder / Customers / Talent / Peers (multi-select chips, required)
+- Can offer: same options (multi-select chips, required)
+- **Removed:** Stage, Walk away with
 
 ## Match email format
 ```
@@ -120,13 +119,21 @@ Thanks for coming to the event! Based on your profile, here are the people we th
 ## Environment variables (.env.local)
 - `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key
-- `SUPABASE_SERVICE_ROLE_KEY` — for admin operations (server-side only)
+- `SUPABASE_SERVICE_ROLE_KEY` — for admin operations (server-side only, NOT yet in .env.local)
 - `GROQ_API_KEY` — Groq API key (server-side only, future use)
-- Email service API key — TBD
 
 ## Supabase credentials
 - Project URL: https://iuxpiutfhskitcaesyjk.supabase.co
-- Service role key is available for admin operations
+- Service role key: needed for admin operations (user has it, not stored in .env.local yet)
+
+## Brevo SMTP (email delivery)
+- Provider: Brevo (formerly Sendinblue), free tier — 300 emails/day
+- SMTP: smtp-relay.brevo.com, port 587
+- Username: a56b31001@smtp-brevo.com
+- Connected to Supabase custom SMTP settings
+- Sender: Neon Fund <rohan@neon.fund>
+- **DNS auth (pending):** SPF TXT + 2 DKIM CNAME records need to be added in GoDaddy for neon.fund domain to remove Gmail spam warning
+- Domain: neon.fund hosted on GoDaddy
 
 ## Deployment
 - **Vercel:** startup-matchmaker-kappa.vercel.app
@@ -137,19 +144,25 @@ Thanks for coming to the event! Based on your profile, here are the people we th
 - [x] Onboarding form with all fields + validation
 - [x] Neon Fund branding (colors, logo, Inter font)
 - [x] Mobile-responsive design
-- [x] Deployed to Vercel
-- [x] GitHub repo connected
+- [x] Deployed to Vercel (auto-deploy on push to main)
+- [x] GitHub repo connected (RohanNeon/startup-matchmaker)
 - [x] Chat interface with Groq LLM (built, kept for future)
-- [x] 5 suggestion chips in chat (future)
-- [x] 9 demo profiles seeded
+- [x] Email field + real-time Luma list validation (on blur)
+- [x] Supabase email OTP auth (8-digit code)
+- [x] Brevo SMTP connected (300 emails/day free, replaces Supabase built-in)
+- [x] Branded OTP email template (Neon Fund logo, lime-green code box)
+- [x] luma_list table created with 100 attendees uploaded
+- [x] Waiting screen after form submission
+- [x] Duplicate profile check before sending OTP (saves email tokens)
+- [x] Upsert on profile save (handles edge cases)
+- [x] Removed stage + walk_away_with fields, what_building now optional (100-word limit)
 - [x] PRD in PROJECT.md
-- [ ] Add email field + real-time Luma validation
-- [ ] Supabase email OTP auth
-- [ ] Create luma_list table
-- [ ] Waiting screen after form submission
+- [ ] DNS records for Brevo (SPF + DKIM in GoDaddy) — fixes Gmail spam warning
+- [ ] Update Magic Link email template in Supabase (currently sends link instead of code)
 - [ ] Match algorithm (TBD)
-- [ ] Email delivery system
+- [ ] Email delivery system for match emails
 - [ ] Admin trigger for sending matches
+- [ ] Test cases for concurrency (100 users, documented but not implemented)
 
 ## Key decisions
 1. **v2 pivot:** Replaced live chat with email-based match delivery — better for event format (everyone gets matches at same time)
@@ -158,3 +171,16 @@ Thanks for coming to the event! Based on your profile, here are the people we th
 4. **Groq chat kept:** Built and working, saved for future use (post-match follow-up or next event version)
 5. **Match algorithm TBD:** Core logic not yet decided — will determine based on profile field weights
 6. **No form close:** Form stays open, no hard cutoff in UI
+7. **Brevo over Supabase built-in email:** Supabase free tier has ~30 emails/hour cap, Brevo gives 300/day — needed for 100 attendees
+8. **Duplicate check before OTP:** Check profiles table before sending OTP to avoid wasting email tokens
+9. **Upsert over insert:** Profile save uses upsert to handle edge cases gracefully
+10. **Supabase auth.users vs profiles:** auth.users entries are created on OTP send (normal Supabase behavior), profiles only after verification — this is expected
+
+## Pending tasks (next session)
+1. **DNS records in GoDaddy** — Add SPF TXT + 2 DKIM CNAME records for neon.fund to remove Gmail spam warning
+2. **Fix Magic Link template** — Update ALL Supabase email templates (especially Magic Link) with branded OTP HTML using {{ .Token }}
+3. **Test full flow end-to-end** — After DNS + template fixes, test complete: form → OTP → verify → waiting screen
+4. **Match algorithm** — Design and implement matching logic
+5. **Match email delivery** — Build admin trigger + email send via Brevo API
+6. **Concurrency test cases** — Implement fixes for OTP rate limiting, duplicate submissions, etc.
+7. **Update PRD** — Add test cases and current architecture to PROJECT.md
