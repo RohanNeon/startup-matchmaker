@@ -25,6 +25,33 @@ export default function OnboardingForm({ onComplete }: Props) {
   const [otp, setOtp] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [emailValid, setEmailValid] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+
+  async function validateEmail(email: string) {
+    if (!email || !email.includes("@")) {
+      setEmailError("");
+      setEmailValid(false);
+      return;
+    }
+    setCheckingEmail(true);
+    setEmailError("");
+    const { data } = await supabase
+      .from("luma_list")
+      .select("email")
+      .eq("email", email.toLowerCase().trim())
+      .single();
+
+    if (!data) {
+      setEmailError("This email is not on the guest list. Please use the email you registered with on Luma.");
+      setEmailValid(false);
+    } else {
+      setEmailError("");
+      setEmailValid(true);
+    }
+    setCheckingEmail(false);
+  }
 
   function toggleArray(field: "looking_for" | "can_offer", value: string) {
     setForm((prev) => ({
@@ -42,6 +69,10 @@ export default function OnboardingForm({ onComplete }: Props) {
 
     if (!form.email || !form.email.includes("@")) {
       setError("Please enter a valid email address.");
+      return;
+    }
+    if (!emailValid) {
+      setError("Please use an email that's on the guest list.");
       return;
     }
     if (form.looking_for.length === 0) {
@@ -214,14 +245,35 @@ export default function OnboardingForm({ onComplete }: Props) {
           onSubmit={handleSubmit}
           className="bg-white rounded-2xl shadow-sm border border-neon-dark/10 p-5 sm:p-8 space-y-5 sm:space-y-6"
         >
-          <Field
-            label="Email"
-            value={form.email}
-            onChange={(v) => setForm({ ...form, email: v })}
-            placeholder="you@example.com"
-            required
-            type="email"
-          />
+          <div>
+            <label className="block text-sm font-medium text-neon-dark/80 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => {
+                setForm({ ...form, email: e.target.value });
+                setEmailError("");
+                setEmailValid(false);
+              }}
+              onBlur={() => validateEmail(form.email)}
+              placeholder="you@example.com"
+              required
+              className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-neon-dark focus:border-transparent placeholder:text-neon-dark/30 bg-white ${
+                emailError ? "border-red-400" : emailValid ? "border-green-400" : "border-neon-dark/15"
+              }`}
+            />
+            {checkingEmail && (
+              <p className="text-xs text-neon-dark/40 mt-1">Checking...</p>
+            )}
+            {emailError && (
+              <p className="text-xs text-red-600 mt-1">{emailError}</p>
+            )}
+            {emailValid && !checkingEmail && (
+              <p className="text-xs text-green-600 mt-1">✓ Verified on guest list</p>
+            )}
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field
