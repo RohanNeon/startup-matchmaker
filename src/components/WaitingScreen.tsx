@@ -50,12 +50,6 @@ export default function WaitingScreen({ profile }: Props) {
             Sit tight — great connections are on the way!
           </p>
         </div>
-
-        <div className="bg-neon/20 rounded-xl p-4 border border-neon-dark/10">
-          <p className="text-xs text-neon-dark/60">
-            Your profile has been saved. You can close this page — we&apos;ll email your matches.
-          </p>
-        </div>
       </div>
     </div>
   );
