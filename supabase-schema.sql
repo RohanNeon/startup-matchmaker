@@ -21,11 +21,9 @@ create table profiles (
   name text not null,
   company text not null,
   role text not null,
-  what_building text not null,
-  stage text not null,
+  what_building text,
   looking_for text[] not null default '{}',
   can_offer text[] not null default '{}',
-  walk_away_with text not null,
   created_at timestamptz default now()
 );
 
