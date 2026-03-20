@@ -47,7 +47,7 @@ export default function WaitingScreen({ profile }: Props) {
           </p>
 
           <p className="text-neon-dark/50 text-sm">
-            Sit tight — great connections are on the way!
+            Sit tight, great connections are on the way!
           </p>
         </div>
       </div>

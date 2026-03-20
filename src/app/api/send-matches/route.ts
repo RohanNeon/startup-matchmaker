@@ -133,7 +133,7 @@ function buildEmailHtml(recipientName: string, matches: Match[]): string {
     <div style="text-align: center; margin-bottom: 32px;">
       <img src="https://startup-matchmaker-kappa.vercel.app/neon-logo.png" alt="Neon Fund" width="48" height="48" style="margin-bottom: 12px;" />
       <h1 style="color: #1d3d0f; font-size: 22px; font-weight: 700; margin: 0;">Your Top Matches</h1>
-      <p style="color: #1d3d0f99; font-size: 14px; margin: 8px 0 0;">Neon Fund — Startup Matchmaker</p>
+      <p style="color: #1d3d0f99; font-size: 14px; margin: 8px 0 0;">Neon Fund | Startup Matchmaker</p>
     </div>
     <div style="background: #ffffff; border-radius: 16px; padding: 24px; border: 1px solid rgba(29,61,15,0.1);">
       <p style="color: #1d3d0f; font-size: 15px; margin: 0 0 4px;">Hi ${recipientName} 👋</p>
@@ -144,8 +144,31 @@ function buildEmailHtml(recipientName: string, matches: Match[]): string {
         ${matchRows}
       </table>
     </div>
+    <div style="background: #ffffff; border-radius: 16px; padding: 24px; border: 1px solid rgba(29,61,15,0.1); margin-top: 20px;">
+      <p style="color: #1d3d0f; font-size: 14px; font-weight: 600; margin: 0 0 4px;">While you wait to connect...</p>
+      <p style="color: #1d3d0f99; font-size: 13px; margin: 0 0 16px;">Hear from founders who've been in your shoes.</p>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 0 4px 12px 0; width: 33%; vertical-align: top;">
+            <a href="https://www.youtube.com/watch?v=lSgxAKaeREw" style="text-decoration: none;">
+              <img src="https://img.youtube.com/vi/lSgxAKaeREw/mqdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
+            </a>
+          </td>
+          <td style="padding: 0 4px 12px; width: 33%; vertical-align: top;">
+            <a href="https://www.youtube.com/watch?v=BpZfUm7vonE" style="text-decoration: none;">
+              <img src="https://img.youtube.com/vi/BpZfUm7vonE/mqdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
+            </a>
+          </td>
+          <td style="padding: 0 0 12px 4px; width: 33%; vertical-align: top;">
+            <a href="https://www.youtube.com/watch?v=bQyUqWMSDho" style="text-decoration: none;">
+              <img src="https://img.youtube.com/vi/bQyUqWMSDho/mqdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
+            </a>
+          </td>
+        </tr>
+      </table>
+    </div>
     <p style="text-align: center; color: #1d3d0f40; font-size: 12px; margin-top: 24px;">
-      © Neon Fund — Startup Matchmaker
+      © Neon Fund | Startup Matchmaker
     </p>
   </div>
 </body>
@@ -218,7 +241,7 @@ export async function POST(request: Request) {
       await transporter.sendMail({
         from: '"Neon Fund" <rohan@neon.fund>',
         to: recipient.email,
-        subject: `🤝 Your Top ${matches.length} Matches — Neon Fund`,
+        subject: `🤝 Your Top ${matches.length} Matches | Neon Fund`,
         html,
       });
       results.push({ email: recipient.email, status: "sent", matchCount: matches.length });
