@@ -196,13 +196,6 @@ export default function OnboardingForm({ onComplete }: Props) {
 
     localStorage.setItem("profile_email", email);
 
-    // Fire-and-forget: trigger match email immediately after profile save
-    fetch("/api/trigger-my-matches", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    }).catch(() => {});
-
     onComplete(data as Profile);
   }
 
