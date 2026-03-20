@@ -285,20 +285,24 @@ export default function OnboardingForm({ onComplete }: Props) {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12">
       <div className="w-full max-w-lg">
-        <div className="text-center mb-6 sm:mb-8">
-          <Image
-            src="/neon-logo.png"
-            alt="Neon Fund"
-            width={56}
-            height={56}
-            className="mx-auto mb-3"
-          />
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neon-dark">
-            Startup Matchmaker
-          </h1>
-          <p className="mt-1.5 text-sm sm:text-base text-neon-dark/60">
-            Tell us about yourself so we can find your best matches today.
-          </p>
+        <div className="flex items-center justify-between mb-4 sm:mb-6 bg-white rounded-2xl px-4 py-3 border border-neon-dark/10 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Image
+              src="/neon-logo.png"
+              alt="Neon Fund"
+              width={32}
+              height={32}
+            />
+            <span className="text-sm font-semibold text-neon-dark">Neon Fund</span>
+          </div>
+          <div className="text-right">
+            <h1 className="text-base sm:text-lg font-bold tracking-tight text-neon-dark leading-tight">
+              Startup Matchmaker
+            </h1>
+            <p className="text-[11px] text-neon-dark/50">
+              Find your best matches today
+            </p>
+          </div>
         </div>
 
         <form
