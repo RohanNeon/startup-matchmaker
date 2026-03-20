@@ -3,20 +3,25 @@ import { NextResponse } from "next/server";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const nodemailer = require("nodemailer");
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy init — avoid crashing at build time when env vars aren't available
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
-const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.BREVO_SMTP_USER!,
-    pass: process.env.BREVO_SMTP_PASS!,
-  },
-});
+function getTransporter() {
+  return nodemailer.createTransport({
+    host: "smtp-relay.brevo.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.BREVO_SMTP_USER!,
+      pass: process.env.BREVO_SMTP_PASS!,
+    },
+  });
+}
 
 interface Profile {
   email: string;
@@ -110,7 +115,6 @@ function buildEmailHtml(recipientName: string, matches: Match[]): string {
             <div style="font-size: 13px; color: #1d3d0f99; margin-bottom: 4px;">
               ${m.profile.role} at ${m.profile.company}
             </div>
-            ${m.profile.what_building ? `<div style="font-size: 13px; color: #1d3d0f80; margin-bottom: 6px; font-style: italic;">Building: ${m.profile.what_building.slice(0, 120)}</div>` : ""}
             <div style="font-size: 13px; color: #1d3d0f;">
               <span style="background: #e8ff79; padding: 2px 8px; border-radius: 6px; font-weight: 500;">${reason}</span>
             </div>
@@ -127,7 +131,7 @@ function buildEmailHtml(recipientName: string, matches: Match[]): string {
 <body style="margin: 0; padding: 0; background-color: #fdfff0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;">
   <div style="max-width: 520px; margin: 0 auto; padding: 40px 24px;">
     <div style="text-align: center; margin-bottom: 32px;">
-      <img src="https://startup-matchmaker-kappa.vercel.app/neon-logo.png" alt="Neon Fund" width="48" height="48" style="margin-bottom: 12px;" />
+      <img src="https://startup-matchmaker-kappa.vercel.app/neon-logo.png" alt="Neon Fund" width="48" height="48" style="margin-bottom: 12px; border-radius: 8px; background-color: #fdfff0;" />
       <h1 style="color: #1d3d0f; font-size: 22px; font-weight: 700; margin: 0;">Your Top Matches</h1>
       <p style="color: #1d3d0f99; font-size: 14px; margin: 8px 0 0;">Neon Fund — Startup Matchmaker</p>
     </div>
@@ -158,6 +162,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const supabaseAdmin = getSupabaseAdmin();
+  const transporter = getTransporter();
+
   // Fetch all profiles
   const { data: profiles, error: profilesError } = await supabaseAdmin
     .from("profiles")
@@ -173,6 +180,7 @@ export async function POST(request: Request) {
   // Fetch luma_list for LinkedIn URLs
   const { data: lumaList } = await supabaseAdmin
     .from("luma_list")
+
     .select("email, linkedin_url");
 
   const lumaMap = new Map<string, string | null>();
