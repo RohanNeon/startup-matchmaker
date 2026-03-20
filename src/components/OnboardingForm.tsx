@@ -233,9 +233,9 @@ export default function OnboardingForm({ onComplete }: Props) {
                 type="text"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
-                placeholder="Enter 8-digit code"
+                placeholder="Enter 6-digit code"
                 required
-                maxLength={8}
+                maxLength={6}
                 className="w-full px-4 py-3 rounded-xl border border-neon-dark/15 text-center text-lg tracking-[0.3em] font-mono focus:outline-none focus:ring-2 focus:ring-neon-dark focus:border-transparent placeholder:text-neon-dark/30 bg-white"
               />
             </div>
@@ -248,7 +248,7 @@ export default function OnboardingForm({ onComplete }: Props) {
 
             <button
               type="submit"
-              disabled={submitting || otp.length < 8}
+              disabled={submitting || otp.length < 6}
               className="w-full py-3 px-4 bg-neon-dark text-neon rounded-xl font-semibold hover:bg-neon-dark/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? "Verifying..." : "Verify & Continue"}
