@@ -113,7 +113,7 @@ export default function OnboardingForm({ onComplete }: Props) {
       return;
     }
     if (form.can_offer.length === 0) {
-      setError("Please select at least one 'Can offer' option.");
+      setError("Please select at least one 'Interested in' option.");
       return;
     }
 
@@ -389,7 +389,7 @@ export default function OnboardingForm({ onComplete }: Props) {
           />
 
           <MultiSelect
-            label="Can offer"
+            label="Interested in"
             options={OPTIONS}
             selected={form.can_offer}
             onToggle={(v) => toggleArray("can_offer", v)}

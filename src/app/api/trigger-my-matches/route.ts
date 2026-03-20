@@ -73,7 +73,7 @@ function buildEmailHtml(recipientName: string, matches: Match[]): string {
       const linkedinLink = m.linkedin
         ? `<a href="${m.linkedin}" style="color: #1d3d0f; text-decoration: underline;">LinkedIn Profile</a>`
         : "";
-      const canOffer = m.profile.can_offer?.join(", ") || "";
+      const interests = m.profile.can_offer?.join(", ") || "";
       return `
         <tr>
           <td style="padding: 16px 0; border-bottom: 1px solid rgba(29,61,15,0.08);">
@@ -83,8 +83,8 @@ function buildEmailHtml(recipientName: string, matches: Match[]): string {
             <div style="font-size: 13px; color: #1d3d0f99; margin-bottom: 4px;">
               ${m.profile.role} at ${m.profile.company}
             </div>
-            ${canOffer ? `<div style="font-size: 13px; color: #1d3d0f; margin-bottom: 4px;">
-              <span style="background: #e8ff79; padding: 2px 8px; border-radius: 6px; font-weight: 500;">Interested in: ${canOffer}</span>
+            ${interests ? `<div style="font-size: 13px; color: #1d3d0f; margin-bottom: 4px;">
+              <span style="background: #e8ff79; padding: 2px 8px; border-radius: 6px; font-weight: 500;">Interested in: ${interests}</span>
             </div>` : ""}
             ${linkedinLink ? `<div style="margin-top: 6px; font-size: 13px;">${linkedinLink}</div>` : ""}
           </td>
