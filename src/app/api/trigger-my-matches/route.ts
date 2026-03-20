@@ -124,17 +124,17 @@ function buildEmailHtml(recipientName: string, matches: Match[]): string {
       <table style="width: 100%; border-collapse: collapse;">
         <tr>
           <td class="video-cell" style="width: 33%; padding: 0 4px 0 0; vertical-align: top;">
-            <a href="https://www.youtube.com/watch?v=lSgxAKaeREw" style="text-decoration: none;">
+            <a href="https://be.neon.fund/Rohit-Agarwal-Agentic-Infra-Event" style="text-decoration: none;">
               <img src="https://img.youtube.com/vi/lSgxAKaeREw/maxresdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
             </a>
           </td>
           <td class="video-cell" style="width: 33%; padding: 0 4px; vertical-align: top;">
-            <a href="https://www.youtube.com/watch?v=BpZfUm7vonE" style="text-decoration: none;">
+            <a href="https://be.neon.fund/sudarshan-kamath-Agentic-Infra-Event" style="text-decoration: none;">
               <img src="https://img.youtube.com/vi/BpZfUm7vonE/maxresdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
             </a>
           </td>
           <td class="video-cell" style="width: 33%; padding: 0 0 0 4px; vertical-align: top;">
-            <a href="https://www.youtube.com/watch?v=bQyUqWMSDho" style="text-decoration: none;">
+            <a href="https://be.neon.fund/Ashu-Garg-Agentic-Infra-Event" style="text-decoration: none;">
               <img src="https://img.youtube.com/vi/bQyUqWMSDho/maxresdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
             </a>
           </td>
