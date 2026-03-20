@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { Profile } from "@/lib/types";
@@ -28,6 +28,27 @@ export default function OnboardingForm({ onComplete }: Props) {
   const [emailError, setEmailError] = useState("");
   const [emailValid, setEmailValid] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Cooldown timer for resend button
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
+  async function handleResendOtp() {
+    setError("");
+    const email = form.email.toLowerCase().trim();
+    const { error: authError } = await supabase.auth.signInWithOtp({ email });
+    if (authError) {
+      setError(authError.message);
+    } else {
+      setResendCooldown(60);
+      setError("");
+      setOtp("");
+    }
+  }
 
   async function validateEmail(email: string) {
     if (!email || !email.includes("@")) {
@@ -125,6 +146,7 @@ export default function OnboardingForm({ onComplete }: Props) {
     }
 
     setSubmitting(false);
+    setResendCooldown(60);
     setStep("otp");
   }
 
@@ -231,17 +253,27 @@ export default function OnboardingForm({ onComplete }: Props) {
               {submitting ? "Verifying..." : "Verify & Continue"}
             </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setStep("form");
-                setOtp("");
-                setError("");
-              }}
-              className="w-full text-sm text-neon-dark/50 hover:text-neon-dark/70 transition-colors"
-            >
-              ← Back to form
-            </button>
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("form");
+                  setOtp("");
+                  setError("");
+                }}
+                className="text-sm text-neon-dark/50 hover:text-neon-dark/70 transition-colors"
+              >
+                ← Back to form
+              </button>
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={resendCooldown > 0}
+                className="text-sm text-neon-dark/50 hover:text-neon-dark/70 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
+              </button>
+            </div>
           </form>
         </div>
       </div>
