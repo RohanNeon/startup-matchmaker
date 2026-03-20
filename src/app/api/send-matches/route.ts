@@ -127,7 +127,13 @@ function buildEmailHtml(recipientName: string, matches: Match[]): string {
   return `
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8" /></head>
+<head><meta charset="utf-8" />
+<style>
+  @media only screen and (max-width: 480px) {
+    .video-cell { display: block !important; width: 100% !important; padding: 0 0 12px 0 !important; }
+  }
+</style>
+</head>
 <body style="margin: 0; padding: 0; background-color: #fdfff0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;">
   <div style="max-width: 520px; margin: 0 auto; padding: 40px 24px;">
     <div style="text-align: center; margin-bottom: 32px;">
@@ -147,15 +153,25 @@ function buildEmailHtml(recipientName: string, matches: Match[]): string {
     <div style="background: #ffffff; border-radius: 16px; padding: 24px; border: 1px solid rgba(29,61,15,0.1); margin-top: 20px;">
       <p style="color: #1d3d0f; font-size: 14px; font-weight: 600; margin: 0 0 4px;">While you wait to connect...</p>
       <p style="color: #1d3d0f99; font-size: 13px; margin: 0 0 16px;">Hear from founders who've been in your shoes.</p>
-      <a href="https://www.youtube.com/watch?v=lSgxAKaeREw" style="text-decoration: none; display: block; margin-bottom: 12px;">
-        <img src="https://img.youtube.com/vi/lSgxAKaeREw/sddefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
-      </a>
-      <a href="https://www.youtube.com/watch?v=BpZfUm7vonE" style="text-decoration: none; display: block; margin-bottom: 12px;">
-        <img src="https://img.youtube.com/vi/BpZfUm7vonE/sddefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
-      </a>
-      <a href="https://www.youtube.com/watch?v=bQyUqWMSDho" style="text-decoration: none; display: block;">
-        <img src="https://img.youtube.com/vi/bQyUqWMSDho/sddefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
-      </a>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td class="video-cell" style="width: 33%; padding: 0 4px 0 0; vertical-align: top;">
+            <a href="https://www.youtube.com/watch?v=lSgxAKaeREw" style="text-decoration: none;">
+              <img src="https://img.youtube.com/vi/lSgxAKaeREw/maxresdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
+            </a>
+          </td>
+          <td class="video-cell" style="width: 33%; padding: 0 4px; vertical-align: top;">
+            <a href="https://www.youtube.com/watch?v=BpZfUm7vonE" style="text-decoration: none;">
+              <img src="https://img.youtube.com/vi/BpZfUm7vonE/maxresdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
+            </a>
+          </td>
+          <td class="video-cell" style="width: 33%; padding: 0 0 0 4px; vertical-align: top;">
+            <a href="https://www.youtube.com/watch?v=bQyUqWMSDho" style="text-decoration: none;">
+              <img src="https://img.youtube.com/vi/bQyUqWMSDho/maxresdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
+            </a>
+          </td>
+        </tr>
+      </table>
     </div>
     <p style="text-align: center; color: #1d3d0f40; font-size: 12px; margin-top: 24px;">
       © Neon Fund | Startup Matchmaker
