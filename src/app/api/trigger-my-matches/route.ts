@@ -116,13 +116,13 @@ function buildEmailHtml(recipientName: string, matches: Match[]): string {
       <p style="color: #1d3d0f; font-size: 14px; font-weight: 600; margin: 0 0 4px;">While you wait to connect...</p>
       <p style="color: #1d3d0f99; font-size: 13px; margin: 0 0 16px;">Hear from founders who've been in your shoes.</p>
       <a href="https://www.youtube.com/watch?v=lSgxAKaeREw" style="text-decoration: none; display: block; margin-bottom: 12px;">
-        <img src="https://img.youtube.com/vi/lSgxAKaeREw/hqdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
+        <img src="https://img.youtube.com/vi/lSgxAKaeREw/sddefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
       </a>
       <a href="https://www.youtube.com/watch?v=BpZfUm7vonE" style="text-decoration: none; display: block; margin-bottom: 12px;">
-        <img src="https://img.youtube.com/vi/BpZfUm7vonE/hqdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
+        <img src="https://img.youtube.com/vi/BpZfUm7vonE/sddefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
       </a>
       <a href="https://www.youtube.com/watch?v=bQyUqWMSDho" style="text-decoration: none; display: block;">
-        <img src="https://img.youtube.com/vi/bQyUqWMSDho/hqdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
+        <img src="https://img.youtube.com/vi/bQyUqWMSDho/sddefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
       </a>
     </div>
     <p style="text-align: center; color: #1d3d0f40; font-size: 12px; margin-top: 24px;">
