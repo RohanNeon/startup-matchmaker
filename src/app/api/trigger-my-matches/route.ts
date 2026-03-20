@@ -105,7 +105,7 @@ function buildEmailHtml(recipientName: string, matches: Match[]): string {
 <body style="margin: 0; padding: 0; background-color: #fdfff0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;">
   <div style="max-width: 520px; margin: 0 auto; padding: 40px 24px;">
     <div style="text-align: center; margin-bottom: 32px;">
-      <img src="https://startup-matchmaker-kappa.vercel.app/neon-logo.png" alt="Neon Fund" width="48" height="48" style="margin-bottom: 12px;" />
+      <img src="https://startup-matchmaker-kappa.vercel.app/neon-logo-email.png" alt="Neon Fund" width="48" height="48" style="margin-bottom: 12px; border-radius: 8px;" />
       <h1 style="color: #1d3d0f; font-size: 22px; font-weight: 700; margin: 0;">Your Top Matches</h1>
       <p style="color: #1d3d0f99; font-size: 14px; margin: 8px 0 0;">Neon Fund | Startup Matchmaker</p>
     </div>
