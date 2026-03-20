@@ -314,7 +314,7 @@ export default function OnboardingForm({ onComplete }: Props) {
         >
           <div>
             <label className="block text-sm font-medium text-neon-dark/80 mb-1">
-              Email
+              Email <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
@@ -439,7 +439,7 @@ function Field({
   return (
     <div>
       <label className="block text-sm font-medium text-neon-dark/80 mb-1">
-        {label}
+        {label} {required && <span className="text-red-500">*</span>}
       </label>
       <input
         type={type}
@@ -467,7 +467,7 @@ function MultiSelect({
   return (
     <div>
       <label className="block text-sm font-medium text-neon-dark/80 mb-2">
-        {label}
+        {label} <span className="text-red-500">*</span>
       </label>
       <div className="flex flex-wrap gap-2">
         {options.map((opt) => (
