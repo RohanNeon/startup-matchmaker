@@ -105,7 +105,7 @@ function buildEmailHtml(recipientName: string, matches: Match[]): string {
       const linkedinLink = m.linkedin
         ? `<a href="${m.linkedin}" style="color: #1d3d0f; text-decoration: underline;">LinkedIn Profile</a>`
         : "";
-      const reason = m.reasons[0] || "";
+      const canOffer = m.profile.can_offer?.join(", ") || "";
       return `
         <tr>
           <td style="padding: 16px 0; border-bottom: 1px solid rgba(29,61,15,0.08);">
@@ -115,9 +115,9 @@ function buildEmailHtml(recipientName: string, matches: Match[]): string {
             <div style="font-size: 13px; color: #1d3d0f99; margin-bottom: 4px;">
               ${m.profile.role} at ${m.profile.company}
             </div>
-            <div style="font-size: 13px; color: #1d3d0f;">
-              <span style="background: #e8ff79; padding: 2px 8px; border-radius: 6px; font-weight: 500;">${reason}</span>
-            </div>
+            ${canOffer ? `<div style="font-size: 13px; color: #1d3d0f; margin-bottom: 4px;">
+              <span style="background: #e8ff79; padding: 2px 8px; border-radius: 6px; font-weight: 500;">Can offer: ${canOffer}</span>
+            </div>` : ""}
             ${linkedinLink ? `<div style="margin-top: 6px; font-size: 13px;">${linkedinLink}</div>` : ""}
           </td>
         </tr>`;
@@ -131,7 +131,7 @@ function buildEmailHtml(recipientName: string, matches: Match[]): string {
 <body style="margin: 0; padding: 0; background-color: #fdfff0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;">
   <div style="max-width: 520px; margin: 0 auto; padding: 40px 24px;">
     <div style="text-align: center; margin-bottom: 32px;">
-      <img src="https://startup-matchmaker-kappa.vercel.app/neon-logo.png" alt="Neon Fund" width="48" height="48" style="margin-bottom: 12px; border-radius: 8px; background-color: #fdfff0;" />
+      <img src="https://startup-matchmaker-kappa.vercel.app/neon-logo.png" alt="Neon Fund" width="48" height="48" style="margin-bottom: 12px;" />
       <h1 style="color: #1d3d0f; font-size: 22px; font-weight: 700; margin: 0;">Your Top Matches</h1>
       <p style="color: #1d3d0f99; font-size: 14px; margin: 8px 0 0;">Neon Fund — Startup Matchmaker</p>
     </div>
