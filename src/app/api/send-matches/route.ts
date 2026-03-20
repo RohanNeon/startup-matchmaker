@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
-import nodemailer from "nodemailer";
 import { NextResponse } from "next/server";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const nodemailer = require("nodemailer");
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
