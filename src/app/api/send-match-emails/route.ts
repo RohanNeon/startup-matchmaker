@@ -125,7 +125,7 @@ function buildEmailHtml(
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { adminKey } = body;
+  const { adminKey, targetEmail } = body;
 
   if (adminKey !== process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -171,6 +171,11 @@ export async function POST(request: Request) {
   const results: { email: string; status: string; matchCount: number }[] = [];
 
   for (const [profileEmail, storedMatches] of matchesByProfile) {
+    // If targetEmail is specified, only send to that person
+    if (targetEmail && profileEmail !== targetEmail) {
+      continue;
+    }
+
     const recipient = profileMap.get(profileEmail);
     if (!recipient) {
       results.push({ email: profileEmail, status: "skipped_no_profile", matchCount: 0 });
