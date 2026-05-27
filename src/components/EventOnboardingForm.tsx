@@ -5,7 +5,8 @@ import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { Profile } from "@/lib/types";
 
-const OPTIONS = ["Investor", "Co-founder", "Customers", "Talent", "Peers"];
+const LOOKING_FOR_OPTIONS = ["Capital", "Co-founder", "Customers", "Talent", "Peers", "Startups"];
+const CAN_OFFER_OPTIONS = ["Capital", "Co-founder", "Customers", "Talent", "Peers"];
 
 interface Props {
   eventId: string;
@@ -378,14 +379,14 @@ export default function EventOnboardingForm({ eventId, eventName, onComplete }: 
 
           <MultiSelect
             label="What I am looking for?"
-            options={OPTIONS}
+            options={LOOKING_FOR_OPTIONS}
             selected={form.looking_for}
             onToggle={(v) => toggleArray("looking_for", v)}
           />
 
           <MultiSelect
             label="What I can offer?"
-            options={OPTIONS}
+            options={CAN_OFFER_OPTIONS}
             selected={form.can_offer}
             onToggle={(v) => toggleArray("can_offer", v)}
           />
