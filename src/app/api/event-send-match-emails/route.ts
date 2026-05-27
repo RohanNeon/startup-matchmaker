@@ -105,7 +105,7 @@ function buildEmailHtml(
 // Body: { adminKey, eventId, targetEmail?, dryRun? }
 export async function POST(request: Request) {
   const body = await request.json();
-  const { adminKey, eventId, targetEmail, dryRun } = body;
+  const { adminKey, eventId, targetEmail, confirm } = body;
 
   if (adminKey !== process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -114,6 +114,21 @@ export async function POST(request: Request) {
   if (!eventId) {
     return NextResponse.json(
       { error: "eventId is required" },
+      { status: 400 }
+    );
+  }
+
+  // HARD GUARDRAIL: Default is always dry run.
+  // Must pass confirm: true AND targetEmail to send to one person,
+  // or confirm: "SEND_ALL" (exact string) to send to everyone.
+  const isDryRun = !confirm;
+  const isBatchSend = !targetEmail;
+
+  if (isBatchSend && confirm && confirm !== "SEND_ALL") {
+    return NextResponse.json(
+      {
+        error: "BATCH SEND BLOCKED. To send to ALL attendees, pass confirm: \"SEND_ALL\" (exact string). To send to one person, pass targetEmail + confirm: true. Run without confirm first to see a dry run.",
+      },
       { status: 400 }
     );
   }
@@ -206,8 +221,8 @@ export async function POST(request: Request) {
       continue;
     }
 
-    // Dry run mode - don't actually send
-    if (dryRun) {
+    // HARD GUARDRAIL: Dry run unless explicitly confirmed
+    if (isDryRun) {
       results.push({ email: profileEmail, status: "dry_run", matchCount: enrichedMatches.length });
       continue;
     }
@@ -234,10 +249,15 @@ export async function POST(request: Request) {
   return NextResponse.json({
     event: event.name,
     eventId,
-    dryRun: !!dryRun,
+    mode: isDryRun ? "DRY_RUN (no emails sent)" : "LIVE",
     total: results.length,
     sent,
     dryRunCount,
+    ...(isDryRun && {
+      next_step: targetEmail
+        ? "To send for real, add confirm: true"
+        : "To send to ALL, add confirm: \"SEND_ALL\" — are you sure?",
+    }),
     results,
   });
 }
