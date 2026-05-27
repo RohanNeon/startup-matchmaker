@@ -326,7 +326,7 @@ export default function EventOnboardingForm({ eventId, eventName, onComplete }: 
               <p className="text-xs text-red-600 mt-1">{emailError}</p>
             )}
             {emailValid && !checkingEmail && (
-              <p className="text-xs text-green-600 mt-1">✓ Verified on guest list</p>
+              <p className="text-xs text-green-600 mt-1">✓ Verified</p>
             )}
           </div>
 
