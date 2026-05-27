@@ -111,7 +111,7 @@ export default function EventOnboardingForm({ eventId, eventName, onComplete }: 
       return;
     }
     if (form.can_offer.length === 0) {
-      setError("Please select at least one 'Interested in' option.");
+      setError("Please select at least one 'Can offer' option.");
       return;
     }
 
@@ -384,7 +384,7 @@ export default function EventOnboardingForm({ eventId, eventName, onComplete }: 
           />
 
           <MultiSelect
-            label="Interested in"
+            label="Can offer"
             options={OPTIONS}
             selected={form.can_offer}
             onToggle={(v) => toggleArray("can_offer", v)}
