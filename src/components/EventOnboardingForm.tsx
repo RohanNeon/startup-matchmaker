@@ -107,11 +107,11 @@ export default function EventOnboardingForm({ eventId, eventName, onComplete }: 
       return;
     }
     if (form.looking_for.length === 0) {
-      setError("Please select at least one 'Looking for' option.");
+      setError("Please select at least one 'What I am looking for?' option.");
       return;
     }
     if (form.can_offer.length === 0) {
-      setError("Please select at least one 'Can offer' option.");
+      setError("Please select at least one 'What I can offer?' option.");
       return;
     }
 
@@ -377,14 +377,14 @@ export default function EventOnboardingForm({ eventId, eventName, onComplete }: 
           </div>
 
           <MultiSelect
-            label="Looking for"
+            label="What I am looking for?"
             options={OPTIONS}
             selected={form.looking_for}
             onToggle={(v) => toggleArray("looking_for", v)}
           />
 
           <MultiSelect
-            label="Can offer"
+            label="What I can offer?"
             options={OPTIONS}
             selected={form.can_offer}
             onToggle={(v) => toggleArray("can_offer", v)}
