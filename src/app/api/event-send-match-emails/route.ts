@@ -74,8 +74,6 @@ function buildEmailHtml(
 <style>
   @media only screen and (max-width: 480px) {
     .video-cell { display: block !important; width: 100% !important; padding: 0 0 12px 0 !important; }
-    .podcast-thumb { display: block !important; width: 100% !important; padding: 0 0 12px 0 !important; max-width: 100% !important; }
-    .podcast-thumb img { max-width: 100% !important; }
   }
 </style>
 </head>
@@ -98,38 +96,25 @@ function buildEmailHtml(
     <div style="background: #ffffff; border-radius: 16px; padding: 24px; border: 1px solid rgba(29,61,15,0.1); margin-top: 20px;">
       <p style="color: #1d3d0f; font-size: 14px; font-weight: 600; margin: 0 0 4px;">While you wait to connect...</p>
       <p style="color: #1d3d0f99; font-size: 13px; margin: 0 0 16px;">Hear from founders who've been in your shoes.</p>
-      <!--[if mso]>
-      <table role="presentation" width="100%"><tr>
-      <td width="33%" valign="top">
-      <![endif]-->
-      <div style="font-size: 0;">
-        <!--[if !mso]><!-->
-        <div style="display: inline-block; width: 32%; vertical-align: top; padding-right: 2%;">
-        <!--<![endif]-->
-          <a href="https://be.neon.fund/manish-cyber-sec-event-matchmaila" style="text-decoration: none;">
-            <img src="https://img.youtube.com/vi/CIJ1opoj2gQ/maxresdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block; max-width: 160px;" />
-          </a>
-        <!--[if !mso]><!-->
-        </div>
-        <div style="display: inline-block; width: 32%; vertical-align: top; padding-right: 2%;">
-        <!--<![endif]-->
-          <a href="https://be.neon.fund/Animesh-cybersec-event-matchmail" style="text-decoration: none;">
-            <img src="https://img.youtube.com/vi/SuArGOEDi6c/maxresdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block; max-width: 160px;" />
-          </a>
-        <!--[if !mso]><!-->
-        </div>
-        <div style="display: inline-block; width: 32%; vertical-align: top;">
-        <!--<![endif]-->
-          <a href="https://be.neon.fund/sudheesh-cybersec-matchmail" style="text-decoration: none;">
-            <img src="https://img.youtube.com/vi/Ddgxkr-C_30/maxresdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block; max-width: 160px;" />
-          </a>
-        <!--[if !mso]><!-->
-        </div>
-        <!--<![endif]-->
-      </div>
-      <!--[if mso]>
-      </td></tr></table>
-      <![endif]-->
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr>
+          <td class="video-cell" style="width: 33%; padding: 0 4px 0 0; vertical-align: top;">
+            <a href="https://be.neon.fund/manish-cyber-sec-event-matchmaila" style="text-decoration: none;">
+              <img src="https://img.youtube.com/vi/CIJ1opoj2gQ/maxresdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
+            </a>
+          </td>
+          <td class="video-cell" style="width: 33%; padding: 0 4px; vertical-align: top;">
+            <a href="https://be.neon.fund/Animesh-cybersec-event-matchmail" style="text-decoration: none;">
+              <img src="https://img.youtube.com/vi/SuArGOEDi6c/maxresdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
+            </a>
+          </td>
+          <td class="video-cell" style="width: 33%; padding: 0 0 0 4px; vertical-align: top;">
+            <a href="https://be.neon.fund/sudheesh-cybersec-matchmail" style="text-decoration: none;">
+              <img src="https://img.youtube.com/vi/Ddgxkr-C_30/maxresdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
+            </a>
+          </td>
+        </tr>
+      </table>
     </div>
     <p style="text-align: center; color: #1d3d0f40; font-size: 12px; margin-top: 24px;">
       &copy; Neon Fund | Startup Matchmaker
