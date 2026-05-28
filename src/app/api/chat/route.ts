@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
 import { createClient } from "@supabase/supabase-js";
 import { Profile, ChatMessage } from "@/lib/types";
 
-const groq = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: "https://api.groq.com/openai/v1",
-});
+function getGroqClient() {
+  // Dynamic import to avoid build-time failures
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const OpenAI = require("openai").default;
+  return new OpenAI({
+    apiKey: process.env.GROQ_API_KEY,
+    baseURL: "https://api.groq.com/openai/v1",
+  });
+}
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,6 +71,7 @@ ${otherProfiles.length > 0 ? otherProfiles.map(formatProfile).join("\n\n") : "No
 - No long intros, no filler, no "Great question!". Just the matches and why.
 - If no one matches, say so in one sentence.`;
 
+    const groq = getGroqClient();
     const completion = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [
