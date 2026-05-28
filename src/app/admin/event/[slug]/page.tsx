@@ -2,12 +2,8 @@
 
 import { use, useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-);
+import { supabase } from "@/lib/supabase";
+import { useAdminUser } from "../../layout";
 
 interface EventData {
   id: string;
@@ -51,6 +47,8 @@ export default function EventDashboard({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = use(params);
+  const adminUser = useAdminUser();
+  const isSuperAdmin = adminUser?.role === "super_admin";
 
   const [event, setEvent] = useState<EventData | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -76,7 +74,13 @@ export default function EventDashboard({
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState("");
 
-  const getAdminKey = () => sessionStorage.getItem("admin_password") || "";
+  async function getAuthHeaders(): Promise<Record<string, string>> {
+    const { data: { session } } = await supabase.auth.getSession();
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session?.access_token || ""}`,
+    };
+  }
 
   const loadEventData = useCallback(async () => {
     // Fetch event by slug
@@ -158,10 +162,11 @@ export default function EventDashboard({
     setComputeResult("");
 
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch("/api/event-compute-matches", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ adminKey: getAdminKey(), eventId: event.id }),
+        headers,
+        body: JSON.stringify({ eventId: event.id }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -185,11 +190,11 @@ export default function EventDashboard({
     setDryRunResult("");
 
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch("/api/event-send-match-emails", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
-          adminKey: getAdminKey(),
           eventId: event.id,
           // No confirm = dry run
         }),
@@ -218,11 +223,11 @@ export default function EventDashboard({
     setTestResult("");
 
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch("/api/event-send-match-emails", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
-          adminKey: getAdminKey(),
           eventId: event.id,
           targetEmail: testEmail.trim().toLowerCase(),
           confirm: true,
@@ -256,11 +261,11 @@ export default function EventDashboard({
     setSendResult("");
 
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch("/api/event-send-match-emails", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
-          adminKey: getAdminKey(),
           eventId: event.id,
           confirm: "SEND_ALL",
         }),
@@ -374,7 +379,9 @@ export default function EventDashboard({
     { key: "participants", label: "Registered", count: participants.length },
     { key: "guests", label: "Guest List", count: guests.length },
     { key: "matches", label: "Matches", count: matches.length },
-    { key: "emails", label: "Email Controls", count: 0 },
+    ...(isSuperAdmin
+      ? [{ key: "emails" as Tab, label: "Email Controls", count: 0 }]
+      : []),
   ];
 
   return (
@@ -405,16 +412,28 @@ export default function EventDashboard({
               /event/{event.slug}
             </p>
           </div>
-          <button
-            onClick={handleToggleActive}
-            className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
-              event.is_active
-                ? "bg-green-50 text-green-700 hover:bg-green-100"
-                : "bg-neon-dark/5 text-neon-dark/40 hover:bg-neon-dark/10"
-            }`}
-          >
-            {event.is_active ? "Active" : "Closed"}
-          </button>
+          {isSuperAdmin ? (
+            <button
+              onClick={handleToggleActive}
+              className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
+                event.is_active
+                  ? "bg-green-50 text-green-700 hover:bg-green-100"
+                  : "bg-neon-dark/5 text-neon-dark/40 hover:bg-neon-dark/10"
+              }`}
+            >
+              {event.is_active ? "Active" : "Closed"}
+            </button>
+          ) : (
+            <span
+              className={`text-xs px-3 py-1.5 rounded-full font-medium ${
+                event.is_active
+                  ? "bg-green-50 text-green-700"
+                  : "bg-neon-dark/5 text-neon-dark/40"
+              }`}
+            >
+              {event.is_active ? "Active" : "Closed"}
+            </span>
+          )}
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
@@ -465,6 +484,7 @@ export default function EventDashboard({
           uploading={uploading}
           handleCsvUpload={handleCsvUpload}
           uploadResult={uploadResult}
+          isSuperAdmin={isSuperAdmin}
         />
       )}
       {activeTab === "matches" && (
@@ -608,6 +628,7 @@ function GuestsTab({
   uploading,
   handleCsvUpload,
   uploadResult,
+  isSuperAdmin,
 }: {
   guests: GuestEntry[];
   csvText: string;
@@ -615,37 +636,40 @@ function GuestsTab({
   uploading: boolean;
   handleCsvUpload: () => void;
   uploadResult: string;
+  isSuperAdmin: boolean;
 }) {
   return (
     <div className="space-y-4">
-      {/* CSV Upload */}
-      <div className="bg-white rounded-2xl border border-neon-dark/10 p-5">
-        <h3 className="text-sm font-semibold text-neon-dark mb-2">
-          Upload Guest List (CSV)
-        </h3>
-        <p className="text-xs text-neon-dark/40 mb-3">
-          Paste CSV with columns: email, linkedin_url (one per line)
-        </p>
-        <textarea
-          value={csvText}
-          onChange={(e) => setCsvText(e.target.value)}
-          placeholder={"email,linkedin_url\njane@example.com,https://linkedin.com/in/jane\njohn@example.com,"}
-          rows={5}
-          className="w-full px-3 py-2 rounded-lg border border-neon-dark/15 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-neon-dark bg-white resize-none"
-        />
-        <div className="flex items-center gap-3 mt-2">
-          <button
-            onClick={handleCsvUpload}
-            disabled={uploading || !csvText.trim()}
-            className="px-4 py-2 bg-neon-dark text-neon rounded-xl text-sm font-semibold hover:bg-neon-dark/90 transition-colors disabled:opacity-50"
-          >
-            {uploading ? "Uploading..." : "Upload"}
-          </button>
-          {uploadResult && (
-            <p className="text-sm text-neon-dark/60">{uploadResult}</p>
-          )}
+      {/* CSV Upload — only for super admin */}
+      {isSuperAdmin && (
+        <div className="bg-white rounded-2xl border border-neon-dark/10 p-5">
+          <h3 className="text-sm font-semibold text-neon-dark mb-2">
+            Upload Guest List (CSV)
+          </h3>
+          <p className="text-xs text-neon-dark/40 mb-3">
+            Paste CSV with columns: email, linkedin_url (one per line)
+          </p>
+          <textarea
+            value={csvText}
+            onChange={(e) => setCsvText(e.target.value)}
+            placeholder={"email,linkedin_url\njane@example.com,https://linkedin.com/in/jane\njohn@example.com,"}
+            rows={5}
+            className="w-full px-3 py-2 rounded-lg border border-neon-dark/15 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-neon-dark bg-white resize-none"
+          />
+          <div className="flex items-center gap-3 mt-2">
+            <button
+              onClick={handleCsvUpload}
+              disabled={uploading || !csvText.trim()}
+              className="px-4 py-2 bg-neon-dark text-neon rounded-xl text-sm font-semibold hover:bg-neon-dark/90 transition-colors disabled:opacity-50"
+            >
+              {uploading ? "Uploading..." : "Upload"}
+            </button>
+            {uploadResult && (
+              <p className="text-sm text-neon-dark/60">{uploadResult}</p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Guest list table */}
       <div className="bg-white rounded-2xl border border-neon-dark/10 overflow-hidden">

@@ -1,14 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { getSupabaseAdmin, verifySuperAdmin } from "@/lib/admin-auth";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const nodemailer = require("nodemailer");
-
-function getSupabaseAdmin() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-}
 
 function getTransporter() {
   return nodemailer.createTransport({
@@ -127,12 +120,13 @@ function buildEmailHtml(
 // POST /api/event-send-match-emails
 // Body: { adminKey, eventId, targetEmail?, dryRun? }
 export async function POST(request: Request) {
-  const body = await request.json();
-  const { adminKey, eventId, targetEmail, confirm } = body;
-
-  if (adminKey !== process.env.ADMIN_PASSWORD) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await verifySuperAdmin(request);
+  if (!auth.authorized) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
+
+  const body = await request.json();
+  const { eventId, targetEmail, confirm } = body;
 
   if (!eventId) {
     return NextResponse.json(

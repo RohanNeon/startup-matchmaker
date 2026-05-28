@@ -2,12 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-);
+import { supabase } from "@/lib/supabase";
+import { useAdminUser } from "./layout";
 
 interface EventWithStats {
   id: string;
@@ -23,6 +19,9 @@ interface EventWithStats {
 }
 
 export default function AdminPage() {
+  const adminUser = useAdminUser();
+  const isSuperAdmin = adminUser?.role === "super_admin";
+
   const [events, setEvents] = useState<EventWithStats[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -115,13 +114,15 @@ export default function AdminPage() {
     e.preventDefault();
     setCreating(true);
 
-    const adminPassword = sessionStorage.getItem("admin_password") || "";
+    const { data: { session } } = await supabase.auth.getSession();
 
     const res = await fetch("/api/events", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.access_token || ""}`,
+      },
       body: JSON.stringify({
-        adminKey: adminPassword,
         slug: newEvent.slug,
         name: newEvent.name,
         event_date: newEvent.event_date || null,
@@ -149,12 +150,14 @@ export default function AdminPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold text-neon-dark">Events</h1>
-        <button
-          onClick={() => setShowCreate(!showCreate)}
-          className="px-4 py-2 bg-neon-dark text-neon rounded-xl text-sm font-semibold hover:bg-neon-dark/90 transition-colors"
-        >
-          {showCreate ? "Cancel" : "+ New Event"}
-        </button>
+        {isSuperAdmin && (
+          <button
+            onClick={() => setShowCreate(!showCreate)}
+            className="px-4 py-2 bg-neon-dark text-neon rounded-xl text-sm font-semibold hover:bg-neon-dark/90 transition-colors"
+          >
+            {showCreate ? "Cancel" : "+ New Event"}
+          </button>
+        )}
       </div>
 
       {showCreate && (
