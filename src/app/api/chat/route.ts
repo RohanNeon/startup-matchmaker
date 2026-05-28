@@ -12,10 +12,12 @@ function getGroqClient() {
   });
 }
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+  );
+}
 
 function formatProfile(p: Profile): string {
   return [
@@ -34,6 +36,7 @@ export async function POST(req: NextRequest) {
     };
 
     // Fetch current user's profile
+    const supabase = getSupabase();
     const { data: currentUser } = await supabase
       .from("profiles")
       .select("*")
