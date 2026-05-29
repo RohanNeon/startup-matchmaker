@@ -39,7 +39,7 @@ interface MatchEntry {
   linkedin_url: string | null;
 }
 
-type Tab = "participants" | "guests" | "matches" | "emails";
+type Tab = "participants" | "guests" | "checkins" | "matches" | "emails";
 
 export default function EventDashboard({
   params,
@@ -374,10 +374,13 @@ export default function EventDashboard({
   }
 
   const uniqueMatchProfiles = new Set(matches.map((m) => m.profile_email)).size;
+  const registeredEmails = new Set(participants.map((p) => p.email.toLowerCase()));
+  const checkedInCount = guests.filter((g) => registeredEmails.has(g.email.toLowerCase())).length;
 
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: "participants", label: "Registered", count: participants.length },
     { key: "guests", label: "Guest List", count: guests.length },
+    { key: "checkins", label: "Check-ins", count: checkedInCount },
     { key: "matches", label: "Matches", count: matches.length },
     ...(isSuperAdmin
       ? [{ key: "emails" as Tab, label: "Email Controls", count: 0 }]
@@ -486,6 +489,9 @@ export default function EventDashboard({
           uploadResult={uploadResult}
           isSuperAdmin={isSuperAdmin}
         />
+      )}
+      {activeTab === "checkins" && (
+        <CheckInsTab guests={guests} participants={participants} />
       )}
       {activeTab === "matches" && (
         <MatchesTab matches={matches} participants={participants} />
@@ -727,6 +733,152 @@ function GuestsTab({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function CheckInsTab({
+  guests,
+  participants,
+}: {
+  guests: GuestEntry[];
+  participants: Participant[];
+}) {
+  const registeredMap = new Map<string, Participant>();
+  for (const p of participants) {
+    registeredMap.set(p.email.toLowerCase(), p);
+  }
+
+  // Sort: checked-in first, then not checked-in
+  const sorted = [...guests].sort((a, b) => {
+    const aChecked = registeredMap.has(a.email.toLowerCase()) ? 0 : 1;
+    const bChecked = registeredMap.has(b.email.toLowerCase()) ? 0 : 1;
+    return aChecked - bChecked;
+  });
+
+  const checkedIn = sorted.filter((g) =>
+    registeredMap.has(g.email.toLowerCase())
+  );
+  const notCheckedIn = sorted.filter(
+    (g) => !registeredMap.has(g.email.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Summary */}
+      <div className="bg-white rounded-2xl border border-neon-dark/10 p-4 flex items-center gap-6">
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-green-500" />
+          <span className="text-sm text-neon-dark">
+            <span className="font-semibold">{checkedIn.length}</span> checked in
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-neon-dark/15" />
+          <span className="text-sm text-neon-dark">
+            <span className="font-semibold">{notCheckedIn.length}</span> not
+            registered
+          </span>
+        </div>
+        <div className="ml-auto text-sm text-neon-dark/40">
+          {guests.length > 0
+            ? `${Math.round((checkedIn.length / guests.length) * 100)}% conversion`
+            : "—"}
+        </div>
+      </div>
+
+      {/* Checked in */}
+      {checkedIn.length > 0 && (
+        <div className="bg-white rounded-2xl border border-neon-dark/10 overflow-hidden">
+          <div className="px-4 py-3 border-b border-neon-dark/10 bg-green-50/50">
+            <h3 className="text-sm font-semibold text-green-800">
+              Checked In ({checkedIn.length})
+            </h3>
+          </div>
+          <div className="divide-y divide-neon-dark/5">
+            {checkedIn.map((g) => {
+              const p = registeredMap.get(g.email.toLowerCase());
+              return (
+                <div
+                  key={g.email}
+                  className="flex items-center gap-3 px-4 py-3"
+                >
+                  <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-neon-dark truncate">
+                        {p?.name || g.email}
+                      </span>
+                      {p && (
+                        <span className="text-xs text-neon-dark/40 truncate hidden sm:inline">
+                          {p.role} at {p.company}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-neon-dark/40 truncate">
+                      {g.email}
+                    </p>
+                  </div>
+                  {g.linkedin_url && (
+                    <a
+                      href={g.linkedin_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline shrink-0"
+                    >
+                      LinkedIn
+                    </a>
+                  )}
+                  {p && (
+                    <span className="text-[10px] text-neon-dark/30 shrink-0 hidden sm:inline">
+                      {new Date(p.created_at).toLocaleString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Not checked in */}
+      {notCheckedIn.length > 0 && (
+        <div className="bg-white rounded-2xl border border-neon-dark/10 overflow-hidden">
+          <div className="px-4 py-3 border-b border-neon-dark/10 bg-neon-dark/3">
+            <h3 className="text-sm font-semibold text-neon-dark/50">
+              Not Registered ({notCheckedIn.length})
+            </h3>
+          </div>
+          <div className="divide-y divide-neon-dark/5">
+            {notCheckedIn.map((g) => (
+              <div
+                key={g.email}
+                className="flex items-center gap-3 px-4 py-2.5 opacity-60"
+              >
+                <span className="w-2 h-2 rounded-full bg-neon-dark/15 shrink-0" />
+                <span className="text-sm text-neon-dark/60 truncate flex-1">
+                  {g.email}
+                </span>
+                {g.linkedin_url && (
+                  <a
+                    href={g.linkedin_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:underline shrink-0"
+                  >
+                    LinkedIn
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
