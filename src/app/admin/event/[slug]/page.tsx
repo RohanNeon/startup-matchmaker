@@ -488,7 +488,7 @@ export default function EventDashboard({
         />
       )}
       {activeTab === "matches" && (
-        <MatchesTab matches={matches} />
+        <MatchesTab matches={matches} participants={participants} />
       )}
       {activeTab === "emails" && (
         <EmailsTab
@@ -731,7 +731,15 @@ function GuestsTab({
   );
 }
 
-function MatchesTab({ matches }: { matches: MatchEntry[] }) {
+function MatchesTab({
+  matches,
+  participants,
+}: {
+  matches: MatchEntry[];
+  participants: Participant[];
+}) {
+  const [expandedEmail, setExpandedEmail] = useState<string | null>(null);
+
   if (matches.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-neon-dark/10 p-8 text-center">
@@ -742,6 +750,12 @@ function MatchesTab({ matches }: { matches: MatchEntry[] }) {
     );
   }
 
+  // Build lookup map: email → participant
+  const pMap = new Map<string, Participant>();
+  for (const p of participants) {
+    pMap.set(p.email, p);
+  }
+
   // Group by profile_email
   const grouped = new Map<string, MatchEntry[]>();
   for (const m of matches) {
@@ -750,44 +764,144 @@ function MatchesTab({ matches }: { matches: MatchEntry[] }) {
     grouped.set(m.profile_email, existing);
   }
 
+  const uniqueProfiles = Array.from(grouped.keys());
+
   return (
     <div className="space-y-3">
-      {Array.from(grouped.entries()).map(([profileEmail, profileMatches]) => (
-        <div
-          key={profileEmail}
-          className="bg-white rounded-2xl border border-neon-dark/10 p-4"
-        >
-          <h3 className="text-sm font-semibold text-neon-dark mb-2">
-            {profileEmail}
+      <div className="bg-white rounded-2xl border border-neon-dark/10 p-4">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-sm font-semibold text-neon-dark">
+            Match Results
           </h3>
-          <div className="space-y-1">
-            {profileMatches.map((m) => (
-              <div
-                key={`${m.profile_email}-${m.match_rank}`}
-                className="flex items-center gap-3 text-sm"
-              >
-                <span className="w-6 h-6 flex items-center justify-center bg-neon-bg rounded-full text-xs font-bold text-neon-dark">
-                  {m.match_rank}
-                </span>
-                <span className="text-neon-dark/70">{m.match_email}</span>
-                <span className="text-xs text-neon-dark/40">
-                  score: {m.score}
-                </span>
-                {m.linkedin_url && (
-                  <a
-                    href={m.linkedin_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:underline ml-auto"
-                  >
-                    LinkedIn
-                  </a>
+          <span className="text-xs text-neon-dark/40">
+            {uniqueProfiles.length} people · {matches.length} total matches
+          </span>
+        </div>
+      </div>
+
+      {uniqueProfiles.map((profileEmail) => {
+        const profileMatches = grouped.get(profileEmail) || [];
+        const person = pMap.get(profileEmail);
+        const isExpanded = expandedEmail === profileEmail;
+
+        return (
+          <div
+            key={profileEmail}
+            className="bg-white rounded-2xl border border-neon-dark/10 overflow-hidden"
+          >
+            {/* Header — clickable to expand/collapse */}
+            <button
+              onClick={() =>
+                setExpandedEmail(isExpanded ? null : profileEmail)
+              }
+              className="w-full flex items-center gap-3 p-4 text-left hover:bg-neon-bg/30 transition-colors"
+            >
+              <div className="w-9 h-9 rounded-full bg-neon text-neon-dark flex items-center justify-center text-sm font-bold shrink-0">
+                {person?.name?.charAt(0)?.toUpperCase() || "?"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-sm text-neon-dark truncate">
+                    {person?.name || profileEmail}
+                  </span>
+                  <span className="text-xs text-neon-dark/40 shrink-0">
+                    {profileMatches.length} matches
+                  </span>
+                </div>
+                {person && (
+                  <p className="text-xs text-neon-dark/50 truncate">
+                    {person.role} at {person.company}
+                  </p>
                 )}
               </div>
-            ))}
+              <div className="flex items-center gap-2 shrink-0">
+                {person?.looking_for?.slice(0, 3).map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 hidden sm:inline"
+                  >
+                    {tag}
+                  </span>
+                ))}
+                <svg
+                  className={`w-4 h-4 text-neon-dark/30 transition-transform ${
+                    isExpanded ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+            </button>
+
+            {/* Expanded match list */}
+            {isExpanded && (
+              <div className="border-t border-neon-dark/5 px-4 pb-4">
+                <div className="grid gap-2 pt-3">
+                  {profileMatches.map((m) => {
+                    const matchPerson = pMap.get(m.match_email);
+                    return (
+                      <div
+                        key={`${m.profile_email}-${m.match_rank}`}
+                        className="flex items-center gap-3 p-3 rounded-xl bg-neon-bg/50"
+                      >
+                        <div className="w-7 h-7 rounded-full bg-neon-dark text-neon flex items-center justify-center text-xs font-bold shrink-0">
+                          {m.match_rank}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-neon-dark truncate">
+                              {matchPerson?.name || m.match_email}
+                            </span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-neon-dark/5 text-neon-dark/50 font-mono shrink-0">
+                              {m.score} pts
+                            </span>
+                          </div>
+                          {matchPerson && (
+                            <p className="text-xs text-neon-dark/50 truncate">
+                              {matchPerson.role} at {matchPerson.company}
+                            </p>
+                          )}
+                          {matchPerson?.can_offer &&
+                            matchPerson.can_offer.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {matchPerson.can_offer.map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                        </div>
+                        {m.linkedin_url && (
+                          <a
+                            href={m.linkedin_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:underline shrink-0"
+                          >
+                            LinkedIn
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
