@@ -593,32 +593,119 @@ export default function AdminPage() {
 
               <div className="border-t border-[#1d3d0f]/5" />
 
-              {/* CSV */}
+              {/* CSV upload */}
               <div>
-                <label className="block text-[11px] font-semibold text-[#1d3d0f]/45 uppercase tracking-wider mb-1">
-                  Guest List (CSV)
+                <label className="block text-[11px] font-semibold text-[#1d3d0f]/45 uppercase tracking-wider mb-2">
+                  Guest List
                 </label>
-                <textarea
-                  value={csvText}
-                  onChange={(e) => setCsvText(e.target.value)}
-                  placeholder={`email,linkedin_url\njohn@example.com,https://linkedin.com/in/john`}
-                  rows={3}
-                  className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm font-mono bg-[#fdfff0] placeholder:text-[#1d3d0f]/15 focus:outline-none focus:border-[#1d3d0f]/25 resize-none transition-colors"
-                />
-                {csvText.trim() && (
-                  <p className="text-[11px] text-[#1d3d0f]/35 mt-1">
-                    {(() => {
-                      const lines = csvText
-                        .trim()
-                        .split("\n")
-                        .map((l) => l.trim())
-                        .filter(Boolean);
-                      const hasHeader =
-                        lines[0]?.toLowerCase().includes("email") || false;
-                      const n = hasHeader ? lines.length - 1 : lines.length;
-                      return `${n} guest${n !== 1 ? "s" : ""} detected`;
-                    })()}
-                  </p>
+
+                {!csvText.trim() ? (
+                  /* Upload area */
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.add("border-[#1d3d0f]/30", "bg-[#e8ff79]/10");
+                    }}
+                    onDragLeave={(e) => {
+                      e.currentTarget.classList.remove("border-[#1d3d0f]/30", "bg-[#e8ff79]/10");
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.remove("border-[#1d3d0f]/30", "bg-[#e8ff79]/10");
+                      const file = e.dataTransfer.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          setCsvText((ev.target?.result as string) || "");
+                        };
+                        reader.readAsText(file);
+                      }
+                    }}
+                    className="border-2 border-dashed border-[#1d3d0f]/12 rounded-lg p-8 text-center transition-colors cursor-pointer hover:border-[#1d3d0f]/20"
+                    onClick={() =>
+                      document.getElementById("csv-file-input")?.click()
+                    }
+                  >
+                    <input
+                      id="csv-file-input"
+                      type="file"
+                      accept=".csv,.txt,.tsv"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            setCsvText((ev.target?.result as string) || "");
+                          };
+                          reader.readAsText(file);
+                        }
+                      }}
+                    />
+                    <div className="flex flex-col items-center gap-2">
+                      <svg
+                        className="w-8 h-8 text-[#1d3d0f]/20"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1.5}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                        />
+                      </svg>
+                      <p className="text-sm font-medium text-[#1d3d0f]/40">
+                        Drop CSV file here or{" "}
+                        <span className="text-[#1d3d0f] underline">
+                          browse
+                        </span>
+                      </p>
+                      <p className="text-[11px] text-[#1d3d0f]/25">
+                        CSV with email column (required) and optional LinkedIn column
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  /* File loaded - show preview */
+                  <div className="rounded-lg border border-[#1d3d0f]/10 overflow-hidden">
+                    <div className="px-3 py-2 bg-[#fdfff0] border-b border-[#1d3d0f]/6 flex items-center justify-between">
+                      <p className="text-xs font-medium text-[#1d3d0f]/60">
+                        {(() => {
+                          const lines = csvText
+                            .trim()
+                            .split("\n")
+                            .map((l) => l.trim())
+                            .filter(Boolean);
+                          const hasHeader =
+                            lines[0]?.toLowerCase().includes("email") || false;
+                          const n = hasHeader
+                            ? lines.length - 1
+                            : lines.length;
+                          return `${n} guest${n !== 1 ? "s" : ""} loaded${hasHeader ? " (header detected)" : ""}`;
+                        })()}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCsvText("");
+                          const input = document.getElementById("csv-file-input") as HTMLInputElement;
+                          if (input) input.value = "";
+                        }}
+                        className="text-[11px] text-[#1d3d0f]/35 hover:text-red-500 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <div className="px-3 py-2 max-h-28 overflow-y-auto">
+                      <pre className="text-[11px] text-[#1d3d0f]/50 font-mono whitespace-pre-wrap break-all">
+                        {csvText.trim().split("\n").slice(0, 6).join("\n")}
+                        {csvText.trim().split("\n").length > 6 &&
+                          `\n... and ${csvText.trim().split("\n").length - 6} more rows`}
+                      </pre>
+                    </div>
+                  </div>
                 )}
               </div>
 
