@@ -4,6 +4,113 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useAdminUser } from "./layout";
+import * as XLSX from "xlsx";
+
+interface ParsedGuest {
+  email: string;
+  linkedin_url: string | null;
+}
+
+function parseGuestFile(data: ArrayBuffer | string, fileName: string): { guests: ParsedGuest[]; columns: string[]; totalRows: number } {
+  let rows: string[][] = [];
+
+  const ext = fileName.split(".").pop()?.toLowerCase() || "";
+
+  if (ext === "xlsx" || ext === "xls") {
+    // Excel file
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1, defval: "" });
+    rows = jsonData.map((r) => r.map(String));
+  } else {
+    // CSV / TSV / TXT — detect delimiter
+    const text = typeof data === "string" ? data : new TextDecoder().decode(data);
+    const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+
+    // Detect delimiter: tab, comma, semicolon
+    const firstLine = lines[0] || "";
+    const delimiter = firstLine.includes("\t") ? "\t" : firstLine.includes(";") ? ";" : ",";
+
+    rows = lines.map((line) =>
+      line.split(delimiter).map((cell) => cell.trim().replace(/^["']|["']$/g, ""))
+    );
+  }
+
+  if (rows.length === 0) return { guests: [], columns: [], totalRows: 0 };
+
+  // Auto-detect header row: check if first row has column-like names
+  const firstRow = rows[0].map((c) => c.toLowerCase());
+  const hasHeader = firstRow.some(
+    (c) => c.includes("email") || c.includes("mail") || c.includes("linkedin") || c.includes("name")
+  );
+
+  const headerRow = hasHeader ? firstRow : [];
+  const dataRows = hasHeader ? rows.slice(1) : rows;
+
+  // Find email column index
+  let emailColIdx = -1;
+  if (headerRow.length > 0) {
+    emailColIdx = headerRow.findIndex(
+      (h) => h === "email" || h === "e-mail" || h === "email address" || h === "emailaddress" || h.includes("email")
+    );
+  }
+  // Fallback: scan data rows for email-like content
+  if (emailColIdx === -1 && dataRows.length > 0) {
+    for (let col = 0; col < (dataRows[0]?.length || 0); col++) {
+      const sample = dataRows.slice(0, 5).filter((r) => r[col]?.includes("@"));
+      if (sample.length >= 1) {
+        emailColIdx = col;
+        break;
+      }
+    }
+  }
+
+  // Find LinkedIn column index
+  let linkedinColIdx = -1;
+  if (headerRow.length > 0) {
+    linkedinColIdx = headerRow.findIndex(
+      (h) => h.includes("linkedin") || h.includes("profile") || h.includes("url")
+    );
+  }
+  // Fallback: scan data for linkedin.com
+  if (linkedinColIdx === -1 && dataRows.length > 0) {
+    for (let col = 0; col < (dataRows[0]?.length || 0); col++) {
+      if (col === emailColIdx) continue;
+      const sample = dataRows.slice(0, 10).filter((r) => r[col]?.includes("linkedin.com"));
+      if (sample.length >= 1) {
+        linkedinColIdx = col;
+        break;
+      }
+    }
+  }
+
+  const guests: ParsedGuest[] = [];
+  for (const row of dataRows) {
+    const email = emailColIdx >= 0 ? row[emailColIdx]?.toLowerCase().trim() : "";
+    if (!email || !email.includes("@")) continue;
+
+    let linkedin: string | null = null;
+    if (linkedinColIdx >= 0 && row[linkedinColIdx]?.includes("linkedin.com")) {
+      linkedin = row[linkedinColIdx].trim();
+    }
+
+    guests.push({ email, linkedin_url: linkedin });
+  }
+
+  // Deduplicate by email
+  const seen = new Set<string>();
+  const unique = guests.filter((g) => {
+    if (seen.has(g.email)) return false;
+    seen.add(g.email);
+    return true;
+  });
+
+  return {
+    guests: unique,
+    columns: hasHeader ? rows[0] : [],
+    totalRows: dataRows.length,
+  };
+}
 
 interface EventWithStats {
   id: string;
@@ -51,7 +158,9 @@ export default function AdminPage() {
     description: "",
     image_url: "",
   });
-  const [csvText, setCsvText] = useState("");
+  const [parsedGuests, setParsedGuests] = useState<ParsedGuest[]>([]);
+  const [uploadedFileName, setUploadedFileName] = useState("");
+  const [uploadedColumns, setUploadedColumns] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -251,40 +360,13 @@ export default function AdminPage() {
     if (res.ok) {
       const { event } = await res.json();
 
-      if (csvText.trim() && event?.id) {
-        const lines = csvText
-          .trim()
-          .split("\n")
-          .map((l) => l.trim())
-          .filter(Boolean);
-        const startIdx = lines[0]?.toLowerCase().includes("email") ? 1 : 0;
-
-        const entries: {
-          email: string;
-          linkedin_url: string | null;
-          event_id: string;
-        }[] = [];
-        for (let i = startIdx; i < lines.length; i++) {
-          const parts = lines[i]
-            .split(",")
-            .map((p) => p.trim().replace(/"/g, ""));
-          const email = parts[0]?.toLowerCase().trim();
-          if (!email || !email.includes("@")) continue;
-
-          let linkedin: string | null = null;
-          for (let j = 1; j < parts.length; j++) {
-            if (parts[j]?.includes("linkedin.com")) {
-              linkedin = parts[j];
-              break;
-            }
-          }
-
-          entries.push({ email, linkedin_url: linkedin, event_id: event.id });
-        }
-
-        if (entries.length > 0) {
-          await supabase.from("luma_list").insert(entries);
-        }
+      if (parsedGuests.length > 0 && event?.id) {
+        const entries = parsedGuests.map((g) => ({
+          email: g.email,
+          linkedin_url: g.linkedin_url,
+          event_id: event.id,
+        }));
+        await supabase.from("luma_list").insert(entries);
       }
 
       resetForm();
@@ -292,6 +374,25 @@ export default function AdminPage() {
       await loadAll();
     }
     setCreating(false);
+  }
+
+  function handleFileUpload(file: File) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result;
+      if (!result) return;
+      const { guests, columns } = parseGuestFile(result as ArrayBuffer, file.name);
+      setParsedGuests(guests);
+      setUploadedFileName(file.name);
+      setUploadedColumns(columns);
+    };
+    // Read as ArrayBuffer for xlsx, text for csv/txt
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    if (ext === "xlsx" || ext === "xls") {
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.readAsText(file);
+    }
   }
 
   function resetForm() {
@@ -305,7 +406,9 @@ export default function AdminPage() {
       image_url: "",
     });
     setLumaUrl("");
-    setCsvText("");
+    setParsedGuests([]);
+    setUploadedFileName("");
+    setUploadedColumns([]);
     setFetchError("");
   }
 
@@ -593,13 +696,13 @@ export default function AdminPage() {
 
               <div className="border-t border-[#1d3d0f]/5" />
 
-              {/* CSV upload */}
+              {/* File upload */}
               <div>
                 <label className="block text-[11px] font-semibold text-[#1d3d0f]/45 uppercase tracking-wider mb-2">
                   Guest List
                 </label>
 
-                {!csvText.trim() ? (
+                {parsedGuests.length === 0 ? (
                   /* Upload area */
                   <div
                     onDragOver={(e) => {
@@ -613,33 +716,21 @@ export default function AdminPage() {
                       e.preventDefault();
                       e.currentTarget.classList.remove("border-[#1d3d0f]/30", "bg-[#e8ff79]/10");
                       const file = e.dataTransfer.files[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          setCsvText((ev.target?.result as string) || "");
-                        };
-                        reader.readAsText(file);
-                      }
+                      if (file) handleFileUpload(file);
                     }}
                     className="border-2 border-dashed border-[#1d3d0f]/12 rounded-lg p-8 text-center transition-colors cursor-pointer hover:border-[#1d3d0f]/20"
                     onClick={() =>
-                      document.getElementById("csv-file-input")?.click()
+                      document.getElementById("guest-file-input")?.click()
                     }
                   >
                     <input
-                      id="csv-file-input"
+                      id="guest-file-input"
                       type="file"
-                      accept=".csv,.txt,.tsv"
+                      accept=".csv,.xlsx,.xls,.tsv,.txt"
                       className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (ev) => {
-                            setCsvText((ev.target?.result as string) || "");
-                          };
-                          reader.readAsText(file);
-                        }
+                        if (file) handleFileUpload(file);
                       }}
                     />
                     <div className="flex flex-col items-center gap-2">
@@ -657,53 +748,83 @@ export default function AdminPage() {
                         />
                       </svg>
                       <p className="text-sm font-medium text-[#1d3d0f]/40">
-                        Drop CSV file here or{" "}
+                        Drop file here or{" "}
                         <span className="text-[#1d3d0f] underline">
                           browse
                         </span>
                       </p>
                       <p className="text-[11px] text-[#1d3d0f]/25">
-                        CSV with email column (required) and optional LinkedIn column
+                        CSV, Excel, TSV — email column auto-detected
                       </p>
                     </div>
                   </div>
                 ) : (
-                  /* File loaded - show preview */
+                  /* File loaded - show parsed results */
                   <div className="rounded-lg border border-[#1d3d0f]/10 overflow-hidden">
-                    <div className="px-3 py-2 bg-[#fdfff0] border-b border-[#1d3d0f]/6 flex items-center justify-between">
-                      <p className="text-xs font-medium text-[#1d3d0f]/60">
-                        {(() => {
-                          const lines = csvText
-                            .trim()
-                            .split("\n")
-                            .map((l) => l.trim())
-                            .filter(Boolean);
-                          const hasHeader =
-                            lines[0]?.toLowerCase().includes("email") || false;
-                          const n = hasHeader
-                            ? lines.length - 1
-                            : lines.length;
-                          return `${n} guest${n !== 1 ? "s" : ""} loaded${hasHeader ? " (header detected)" : ""}`;
-                        })()}
-                      </p>
+                    {/* Header */}
+                    <div className="px-4 py-2.5 bg-[#fdfff0] border-b border-[#1d3d0f]/6 flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <svg className="w-4 h-4 text-[#1d3d0f]/30 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
+                        <span className="text-xs font-medium text-[#1d3d0f]/60 truncate">
+                          {uploadedFileName}
+                        </span>
+                      </div>
                       <button
                         type="button"
                         onClick={() => {
-                          setCsvText("");
-                          const input = document.getElementById("csv-file-input") as HTMLInputElement;
+                          setParsedGuests([]);
+                          setUploadedFileName("");
+                          setUploadedColumns([]);
+                          const input = document.getElementById("guest-file-input") as HTMLInputElement;
                           if (input) input.value = "";
                         }}
-                        className="text-[11px] text-[#1d3d0f]/35 hover:text-red-500 transition-colors"
+                        className="text-[11px] text-[#1d3d0f]/35 hover:text-red-500 transition-colors flex-shrink-0 ml-2"
                       >
                         Remove
                       </button>
                     </div>
-                    <div className="px-3 py-2 max-h-28 overflow-y-auto">
-                      <pre className="text-[11px] text-[#1d3d0f]/50 font-mono whitespace-pre-wrap break-all">
-                        {csvText.trim().split("\n").slice(0, 6).join("\n")}
-                        {csvText.trim().split("\n").length > 6 &&
-                          `\n... and ${csvText.trim().split("\n").length - 6} more rows`}
-                      </pre>
+
+                    {/* Stats */}
+                    <div className="px-4 py-3 space-y-2">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#e8ff79]" />
+                          <span className="text-xs text-[#1d3d0f]/70">
+                            <span className="font-bold text-[#000000]">{parsedGuests.length}</span> unique emails
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-[#1d3d0f]/20" />
+                          <span className="text-xs text-[#1d3d0f]/70">
+                            <span className="font-bold text-[#000000]">{parsedGuests.filter((g) => g.linkedin_url).length}</span> with LinkedIn
+                          </span>
+                        </div>
+                      </div>
+
+                      {uploadedColumns.length > 0 && (
+                        <p className="text-[11px] text-[#1d3d0f]/30">
+                          Columns found: {uploadedColumns.join(", ")} — extracted email{parsedGuests.some((g) => g.linkedin_url) ? " & LinkedIn" : ""}
+                        </p>
+                      )}
+
+                      {/* Preview first few emails */}
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {parsedGuests.slice(0, 5).map((g) => (
+                          <span
+                            key={g.email}
+                            className="text-[11px] px-2 py-0.5 rounded bg-[#1d3d0f]/5 text-[#1d3d0f]/50 font-mono"
+                          >
+                            {g.email}
+                          </span>
+                        ))}
+                        {parsedGuests.length > 5 && (
+                          <span className="text-[11px] px-2 py-0.5 text-[#1d3d0f]/30">
+                            +{parsedGuests.length - 5} more
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -718,8 +839,8 @@ export default function AdminPage() {
                 >
                   {creating
                     ? "Creating..."
-                    : csvText.trim()
-                      ? "Create & Import Guests"
+                    : parsedGuests.length > 0
+                      ? `Create & Import ${parsedGuests.length} Guests`
                       : "Create Event"}
                 </button>
               </div>
