@@ -455,6 +455,20 @@ export default function EventDashboard({
         </div>
       </div>
 
+      {/* Charts section */}
+      {participants.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          {/* Registration timeline */}
+          <RegistrationTimeline participants={participants} />
+
+          {/* Demand vs Supply */}
+          <DemandSupplyChart participants={participants} />
+
+          {/* Role breakdown */}
+          <RoleBreakdown participants={participants} />
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="flex gap-1 mb-4 bg-neon-dark/5 rounded-xl p-1">
         {tabs.map((tab) => (
@@ -1232,6 +1246,206 @@ function EmailsTab({
             <p className="text-sm text-neon-dark/60">{sendResult}</p>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Chart Components ─── */
+
+function RegistrationTimeline({
+  participants,
+}: {
+  participants: Participant[];
+}) {
+  // Group registrations by date
+  const dayMap = new Map<string, number>();
+  for (const p of participants) {
+    const day = new Date(p.created_at).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+    });
+    dayMap.set(day, (dayMap.get(day) || 0) + 1);
+  }
+
+  const days = Array.from(dayMap.entries());
+  const maxCount = Math.max(...days.map(([, c]) => c), 1);
+
+  return (
+    <div className="bg-[#ffffff] rounded-xl border border-[#1d3d0f]/8 p-4">
+      <h3 className="text-[11px] font-semibold text-[#1d3d0f]/45 uppercase tracking-wider mb-3">
+        Registrations over time
+      </h3>
+      {days.length === 0 ? (
+        <p className="text-xs text-[#1d3d0f]/25 italic">No data</p>
+      ) : (
+        <div className="flex items-end gap-1.5 h-28">
+          {days.map(([day, count]) => (
+            <div
+              key={day}
+              className="flex-1 flex flex-col items-center gap-1 min-w-0"
+            >
+              <span className="text-[10px] font-bold text-[#000000]">
+                {count}
+              </span>
+              <div
+                className="w-full bg-[#e8ff79] rounded-sm min-h-[4px] transition-all"
+                style={{
+                  height: `${(count / maxCount) * 80}px`,
+                }}
+              />
+              <span className="text-[9px] text-[#1d3d0f]/35 truncate w-full text-center">
+                {day}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DemandSupplyChart({
+  participants,
+}: {
+  participants: Participant[];
+}) {
+  const categories = ["Investor", "Co-founder", "Customers", "Talent", "Peers", "Capital", "Startups"];
+  const lookingFor: Record<string, number> = {};
+  const canOffer: Record<string, number> = {};
+
+  for (const p of participants) {
+    for (const item of p.looking_for || []) {
+      lookingFor[item] = (lookingFor[item] || 0) + 1;
+    }
+    for (const item of p.can_offer || []) {
+      canOffer[item] = (canOffer[item] || 0) + 1;
+    }
+  }
+
+  // Only show categories that have data
+  const activeCategories = categories.filter(
+    (c) => (lookingFor[c] || 0) > 0 || (canOffer[c] || 0) > 0
+  );
+  const maxVal = Math.max(
+    ...activeCategories.map((c) =>
+      Math.max(lookingFor[c] || 0, canOffer[c] || 0)
+    ),
+    1
+  );
+
+  return (
+    <div className="bg-[#ffffff] rounded-xl border border-[#1d3d0f]/8 p-4">
+      <h3 className="text-[11px] font-semibold text-[#1d3d0f]/45 uppercase tracking-wider mb-1">
+        Demand vs Supply
+      </h3>
+      <div className="flex items-center gap-3 mb-3">
+        <div className="flex items-center gap-1">
+          <span className="w-2.5 h-2.5 rounded-sm bg-[#1d3d0f]" />
+          <span className="text-[10px] text-[#1d3d0f]/40">Looking for</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-2.5 h-2.5 rounded-sm bg-[#e8ff79]" />
+          <span className="text-[10px] text-[#1d3d0f]/40">Can offer</span>
+        </div>
+      </div>
+      <div className="space-y-2.5">
+        {activeCategories.map((cat) => {
+          const demand = lookingFor[cat] || 0;
+          const supply = canOffer[cat] || 0;
+          return (
+            <div key={cat}>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[11px] font-medium text-[#000000]">
+                  {cat}
+                </span>
+                <span className="text-[10px] text-[#1d3d0f]/35">
+                  {demand} / {supply}
+                </span>
+              </div>
+              <div className="flex gap-0.5">
+                <div className="flex-1 h-2 bg-[#1d3d0f]/5 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#1d3d0f] rounded-full"
+                    style={{
+                      width: `${(demand / maxVal) * 100}%`,
+                    }}
+                  />
+                </div>
+                <div className="flex-1 h-2 bg-[#1d3d0f]/5 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#e8ff79] rounded-full"
+                    style={{
+                      width: `${(supply / maxVal) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function RoleBreakdown({
+  participants,
+}: {
+  participants: Participant[];
+}) {
+  // Count roles
+  const roleMap = new Map<string, number>();
+  for (const p of participants) {
+    const role = p.role?.trim() || "Unknown";
+    roleMap.set(role, (roleMap.get(role) || 0) + 1);
+  }
+
+  // Sort by count descending
+  const roles = Array.from(roleMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+  const total = participants.length;
+
+  // Colors for role bars
+  const barColors = [
+    "bg-[#1d3d0f]",
+    "bg-[#e8ff79]",
+    "bg-[#1d3d0f]/60",
+    "bg-[#e8ff79]/70",
+    "bg-[#1d3d0f]/40",
+    "bg-[#000000]/20",
+    "bg-[#1d3d0f]/25",
+    "bg-[#e8ff79]/50",
+  ];
+
+  return (
+    <div className="bg-[#ffffff] rounded-xl border border-[#1d3d0f]/8 p-4">
+      <h3 className="text-[11px] font-semibold text-[#1d3d0f]/45 uppercase tracking-wider mb-3">
+        Roles
+      </h3>
+      <div className="space-y-2">
+        {roles.map(([role, count], i) => {
+          const pct = Math.round((count / total) * 100);
+          return (
+            <div key={role}>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[11px] font-medium text-[#000000] truncate mr-2">
+                  {role}
+                </span>
+                <span className="text-[10px] text-[#1d3d0f]/35 flex-shrink-0">
+                  {count} ({pct}%)
+                </span>
+              </div>
+              <div className="w-full h-2 bg-[#1d3d0f]/5 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${barColors[i % barColors.length]}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
