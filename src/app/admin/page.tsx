@@ -11,6 +11,7 @@ interface EventWithStats {
   name: string;
   event_date: string | null;
   location: string | null;
+  image_url: string | null;
   is_active: boolean;
   created_at: string;
   guestCount: number;
@@ -36,6 +37,7 @@ export default function AdminPage() {
     event_date: "",
     location: "",
     description: "",
+    image_url: "",
   });
   const [csvText, setCsvText] = useState("");
   const [creating, setCreating] = useState(false);
@@ -143,6 +145,7 @@ export default function AdminPage() {
           event_date: data.event_date || "",
           location: data.location || "",
           description: data.description || "",
+          image_url: data.image_url || "",
         });
         setFetchError("");
       } else {
@@ -171,6 +174,7 @@ export default function AdminPage() {
         event_date: newEvent.event_date || null,
         location: newEvent.location || null,
         description: newEvent.description || null,
+        image_url: newEvent.image_url || null,
       }),
     });
 
@@ -206,7 +210,7 @@ export default function AdminPage() {
       }
 
       setShowCreate(false);
-      setNewEvent({ name: "", slug: "", event_date: "", location: "", description: "" });
+      setNewEvent({ name: "", slug: "", event_date: "", location: "", description: "", image_url: "" });
       setLumaUrl("");
       setCsvText("");
       await loadEvents();
@@ -267,9 +271,21 @@ export default function AdminPage() {
               <p className="text-xs text-red-600 mt-1.5">{fetchError}</p>
             )}
             {newEvent.name && !fetchError && lumaUrl && (
-              <p className="text-xs text-green-700 mt-1.5">
-                Event details fetched successfully
-              </p>
+              <div className="mt-3">
+                <p className="text-xs text-green-700 mb-2">
+                  Event details fetched successfully
+                </p>
+                {newEvent.image_url && (
+                  <div className="rounded-xl overflow-hidden border border-neon-dark/10">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={newEvent.image_url}
+                      alt={newEvent.name}
+                      className="w-full h-40 object-cover"
+                    />
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
@@ -411,6 +427,7 @@ export default function AdminPage() {
                   event_date: "",
                   location: "",
                   description: "",
+                  image_url: "",
                 });
                 setLumaUrl("");
                 setCsvText("");
@@ -440,52 +457,64 @@ export default function AdminPage() {
           <Link
             key={event.id}
             href={`/admin/event/${event.slug}`}
-            className="block bg-white rounded-2xl border border-neon-dark/10 p-5 hover:border-neon-dark/25 transition-colors"
+            className="block bg-white rounded-2xl border border-neon-dark/10 overflow-hidden hover:border-neon-dark/25 transition-colors"
           >
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h2 className="text-lg font-semibold text-neon-dark">
-                  {event.name}
-                </h2>
-                <p className="text-sm text-neon-dark/50">
-                  {event.event_date
-                    ? new Date(event.event_date).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })
-                    : "Date TBD"}
-                  {event.location && ` · ${event.location}`}
-                </p>
+            {event.image_url && (
+              <div className="h-36 w-full overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={event.image_url}
+                  alt={event.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <span
-                className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                  event.is_active
-                    ? "bg-green-50 text-green-700"
-                    : "bg-neon-dark/5 text-neon-dark/40"
-                }`}
-              >
-                {event.is_active ? "Active" : "Closed"}
-              </span>
+            )}
+            <div className="p-5">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-neon-dark">
+                    {event.name}
+                  </h2>
+                  <p className="text-sm text-neon-dark/50">
+                    {event.event_date
+                      ? new Date(event.event_date).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })
+                      : "Date TBD"}
+                    {event.location && ` · ${event.location}`}
+                  </p>
+                </div>
+                <span
+                  className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                    event.is_active
+                      ? "bg-green-50 text-green-700"
+                      : "bg-neon-dark/5 text-neon-dark/40"
+                  }`}
+                >
+                  {event.is_active ? "Active" : "Closed"}
+                </span>
+              </div>
+              <div className="flex gap-6">
+                <Stat label="Guests" value={event.guestCount} />
+                <Stat label="Registered" value={event.profileCount} />
+                <Stat label="Matches" value={event.matchCount} />
+                <Stat
+                  label="Conversion"
+                  value={
+                    event.guestCount > 0
+                      ? `${Math.round(
+                          (event.profileCount / event.guestCount) * 100
+                        )}%`
+                      : "—"
+                  }
+                />
+              </div>
+              <p className="text-xs text-neon-dark/30 mt-3">
+                /event/{event.slug}
+              </p>
             </div>
-            <div className="flex gap-6">
-              <Stat label="Guests" value={event.guestCount} />
-              <Stat label="Registered" value={event.profileCount} />
-              <Stat label="Matches" value={event.matchCount} />
-              <Stat
-                label="Conversion"
-                value={
-                  event.guestCount > 0
-                    ? `${Math.round(
-                        (event.profileCount / event.guestCount) * 100
-                      )}%`
-                    : "—"
-                }
-              />
-            </div>
-            <p className="text-xs text-neon-dark/30 mt-3">
-              /event/{event.slug}
-            </p>
           </Link>
         ))}
       </div>

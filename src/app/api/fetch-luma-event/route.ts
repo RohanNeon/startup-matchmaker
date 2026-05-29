@@ -69,6 +69,28 @@ export async function POST(request: Request) {
 
     const title = getMetaContent("og:title");
     const description = getMetaContent("og:description");
+    const ogImage = getMetaContent("og:image");
+
+    // Extract the raw cover image from the og:image URL's img= parameter
+    let coverImage = "";
+    if (ogImage) {
+      try {
+        // The og:image URL contains an img= param with the actual cover image
+        // Handle HTML entities (&amp; → &)
+        const cleanOgUrl = ogImage.replace(/&amp;/g, "&");
+        const ogUrl = new URL(cleanOgUrl);
+        const imgParam = ogUrl.searchParams.get("img");
+        if (imgParam) {
+          coverImage = imgParam;
+        } else {
+          // Fallback: use the full og:image
+          coverImage = cleanOgUrl;
+        }
+      } catch {
+        // If URL parsing fails, use og:image as-is
+        coverImage = ogImage.replace(/&amp;/g, "&");
+      }
+    }
 
     // Try to extract date/time from JSON-LD or script data
     let eventDate = "";
@@ -126,6 +148,7 @@ export async function POST(request: Request) {
       description: description || "",
       event_date: eventDate || "",
       location: location || "",
+      image_url: coverImage || "",
       slug,
       source_url: url,
     });
