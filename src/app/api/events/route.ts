@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { slug, name, event_date, location } = body;
+  const { slug, name, event_date, location, description } = body;
 
   if (!slug || !name) {
     return NextResponse.json(
@@ -36,9 +36,12 @@ export async function POST(request: Request) {
 
   const supabaseAdmin = getSupabaseAdmin();
 
+  const insertData: Record<string, unknown> = { slug, name, event_date, location };
+  if (description) insertData.description = description;
+
   const { data, error } = await supabaseAdmin
     .from("events")
-    .insert([{ slug, name, event_date, location }])
+    .insert([insertData])
     .select()
     .single();
 

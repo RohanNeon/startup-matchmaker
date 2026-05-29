@@ -27,12 +27,17 @@ export default function AdminPage() {
 
   // Create event form
   const [showCreate, setShowCreate] = useState(false);
+  const [lumaUrl, setLumaUrl] = useState("");
+  const [fetching, setFetching] = useState(false);
+  const [fetchError, setFetchError] = useState("");
   const [newEvent, setNewEvent] = useState({
     name: "",
     slug: "",
     event_date: "",
     location: "",
+    description: "",
   });
+  const [csvText, setCsvText] = useState("");
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -110,29 +115,100 @@ export default function AdminPage() {
     setLoading(false);
   }
 
+  async function getAuthHeaders(): Promise<Record<string, string>> {
+    const { data: { session } } = await supabase.auth.getSession();
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session?.access_token || ""}`,
+    };
+  }
+
+  async function handleFetchLuma() {
+    if (!lumaUrl.trim()) return;
+    setFetching(true);
+    setFetchError("");
+
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch("/api/fetch-luma-event", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ url: lumaUrl.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok && data.name) {
+        setNewEvent({
+          name: data.name || "",
+          slug: data.slug || "",
+          event_date: data.event_date || "",
+          location: data.location || "",
+          description: data.description || "",
+        });
+        setFetchError("");
+      } else {
+        setFetchError(data.error || "Could not fetch event details");
+      }
+    } catch {
+      setFetchError("Network error fetching Luma page");
+    }
+
+    setFetching(false);
+  }
+
   async function handleCreateEvent(e: React.FormEvent) {
     e.preventDefault();
     setCreating(true);
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const headers = await getAuthHeaders();
 
+    // 1. Create the event
     const res = await fetch("/api/events", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session?.access_token || ""}`,
-      },
+      headers,
       body: JSON.stringify({
         slug: newEvent.slug,
         name: newEvent.name,
         event_date: newEvent.event_date || null,
         location: newEvent.location || null,
+        description: newEvent.description || null,
       }),
     });
 
     if (res.ok) {
+      const { event } = await res.json();
+
+      // 2. If CSV is provided, upload guest list
+      if (csvText.trim() && event?.id) {
+        const lines = csvText.trim().split("\n").map((l) => l.trim()).filter(Boolean);
+        const startIdx = lines[0]?.toLowerCase().includes("email") ? 1 : 0;
+
+        const entries: { email: string; linkedin_url: string | null; event_id: string }[] = [];
+        for (let i = startIdx; i < lines.length; i++) {
+          const parts = lines[i].split(",").map((p) => p.trim().replace(/"/g, ""));
+          const email = parts[0]?.toLowerCase().trim();
+          if (!email || !email.includes("@")) continue;
+
+          // Try to find LinkedIn column
+          let linkedin: string | null = null;
+          for (let j = 1; j < parts.length; j++) {
+            if (parts[j]?.includes("linkedin.com")) {
+              linkedin = parts[j];
+              break;
+            }
+          }
+
+          entries.push({ email, linkedin_url: linkedin, event_id: event.id });
+        }
+
+        if (entries.length > 0) {
+          await supabase.from("luma_list").insert(entries);
+        }
+      }
+
       setShowCreate(false);
-      setNewEvent({ name: "", slug: "", event_date: "", location: "" });
+      setNewEvent({ name: "", slug: "", event_date: "", location: "", description: "" });
+      setLumaUrl("");
+      setCsvText("");
       await loadEvents();
     }
     setCreating(false);
@@ -150,12 +226,12 @@ export default function AdminPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold text-neon-dark">Events</h1>
-        {isSuperAdmin && (
+        {isSuperAdmin && !showCreate && (
           <button
-            onClick={() => setShowCreate(!showCreate)}
+            onClick={() => setShowCreate(true)}
             className="px-4 py-2 bg-neon-dark text-neon rounded-xl text-sm font-semibold hover:bg-neon-dark/90 transition-colors"
           >
-            {showCreate ? "Cancel" : "+ New Event"}
+            + New Event
           </button>
         )}
       </div>
@@ -163,79 +239,197 @@ export default function AdminPage() {
       {showCreate && (
         <form
           onSubmit={handleCreateEvent}
-          className="bg-white rounded-2xl border border-neon-dark/10 p-5 mb-6 space-y-4"
+          className="bg-white rounded-2xl border border-neon-dark/10 p-5 mb-6 space-y-5"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-neon-dark/80 mb-1">
-                Event name *
-              </label>
+          {/* Step 1: Luma URL auto-fetch */}
+          <div>
+            <label className="block text-sm font-semibold text-neon-dark mb-1.5">
+              Import from Luma
+            </label>
+            <div className="flex gap-2">
               <input
-                type="text"
-                value={newEvent.name}
-                onChange={(e) =>
-                  setNewEvent({ ...newEvent, name: e.target.value })
-                }
-                placeholder="Cybersecurity AI"
-                required
-                className="w-full px-3 py-2 rounded-lg border border-neon-dark/15 text-sm focus:outline-none focus:ring-2 focus:ring-neon-dark bg-white"
+                type="url"
+                value={lumaUrl}
+                onChange={(e) => setLumaUrl(e.target.value)}
+                placeholder="https://lu.ma/your-event"
+                className="flex-1 px-3 py-2 rounded-lg border border-neon-dark/15 text-sm focus:outline-none focus:ring-2 focus:ring-neon-dark bg-white"
               />
+              <button
+                type="button"
+                onClick={handleFetchLuma}
+                disabled={fetching || !lumaUrl.trim()}
+                className="px-4 py-2 bg-neon-dark/10 text-neon-dark rounded-lg text-sm font-medium hover:bg-neon-dark/15 transition-colors disabled:opacity-40 whitespace-nowrap"
+              >
+                {fetching ? "Fetching..." : "Fetch Details"}
+              </button>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-neon-dark/80 mb-1">
-                Slug * <span className="text-neon-dark/40 font-normal">(URL path)</span>
-              </label>
-              <input
-                type="text"
-                value={newEvent.slug}
-                onChange={(e) =>
-                  setNewEvent({
-                    ...newEvent,
-                    slug: e.target.value
-                      .toLowerCase()
-                      .replace(/[^a-z0-9-]/g, "-"),
-                  })
-                }
-                placeholder="cybersecurity-ai"
-                required
-                className="w-full px-3 py-2 rounded-lg border border-neon-dark/15 text-sm focus:outline-none focus:ring-2 focus:ring-neon-dark bg-white"
-              />
+            {fetchError && (
+              <p className="text-xs text-red-600 mt-1.5">{fetchError}</p>
+            )}
+            {newEvent.name && !fetchError && lumaUrl && (
+              <p className="text-xs text-green-700 mt-1.5">
+                Event details fetched successfully
+              </p>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-neon-dark/8" />
+
+          {/* Step 2: Editable event fields (auto-populated or manual) */}
+          <div>
+            <p className="text-xs text-neon-dark/50 mb-3">
+              Fields auto-fill from Luma, or fill manually.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neon-dark/80 mb-1">
+                  Event name *
+                </label>
+                <input
+                  type="text"
+                  value={newEvent.name}
+                  onChange={(e) =>
+                    setNewEvent({ ...newEvent, name: e.target.value })
+                  }
+                  placeholder="Cybersecurity AI"
+                  required
+                  className="w-full px-3 py-2 rounded-lg border border-neon-dark/15 text-sm focus:outline-none focus:ring-2 focus:ring-neon-dark bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neon-dark/80 mb-1">
+                  Slug *{" "}
+                  <span className="text-neon-dark/40 font-normal">
+                    (URL path)
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  value={newEvent.slug}
+                  onChange={(e) =>
+                    setNewEvent({
+                      ...newEvent,
+                      slug: e.target.value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9-]/g, "-"),
+                    })
+                  }
+                  placeholder="cybersecurity-ai"
+                  required
+                  className="w-full px-3 py-2 rounded-lg border border-neon-dark/15 text-sm focus:outline-none focus:ring-2 focus:ring-neon-dark bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neon-dark/80 mb-1">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={newEvent.event_date}
+                  onChange={(e) =>
+                    setNewEvent({ ...newEvent, event_date: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-lg border border-neon-dark/15 text-sm focus:outline-none focus:ring-2 focus:ring-neon-dark bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neon-dark/80 mb-1">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={newEvent.location}
+                  onChange={(e) =>
+                    setNewEvent({ ...newEvent, location: e.target.value })
+                  }
+                  placeholder="Bangalore"
+                  className="w-full px-3 py-2 rounded-lg border border-neon-dark/15 text-sm focus:outline-none focus:ring-2 focus:ring-neon-dark bg-white"
+                />
+              </div>
             </div>
-            <div>
+            <div className="mt-4">
               <label className="block text-sm font-medium text-neon-dark/80 mb-1">
-                Date
+                Description
               </label>
-              <input
-                type="date"
-                value={newEvent.event_date}
+              <textarea
+                value={newEvent.description}
                 onChange={(e) =>
-                  setNewEvent({ ...newEvent, event_date: e.target.value })
+                  setNewEvent({ ...newEvent, description: e.target.value })
                 }
-                className="w-full px-3 py-2 rounded-lg border border-neon-dark/15 text-sm focus:outline-none focus:ring-2 focus:ring-neon-dark bg-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neon-dark/80 mb-1">
-                Location
-              </label>
-              <input
-                type="text"
-                value={newEvent.location}
-                onChange={(e) =>
-                  setNewEvent({ ...newEvent, location: e.target.value })
-                }
-                placeholder="Bangalore"
-                className="w-full px-3 py-2 rounded-lg border border-neon-dark/15 text-sm focus:outline-none focus:ring-2 focus:ring-neon-dark bg-white"
+                placeholder="Brief event description..."
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg border border-neon-dark/15 text-sm focus:outline-none focus:ring-2 focus:ring-neon-dark bg-white resize-none"
               />
             </div>
           </div>
-          <div className="flex justify-end">
+
+          {/* Step 3: CSV guest list */}
+          <div>
+            <label className="block text-sm font-semibold text-neon-dark mb-1.5">
+              Guest List (CSV)
+            </label>
+            <p className="text-xs text-neon-dark/50 mb-2">
+              Paste CSV with email column (required) and optional LinkedIn
+              column. Header row is auto-detected.
+            </p>
+            <textarea
+              value={csvText}
+              onChange={(e) => setCsvText(e.target.value)}
+              placeholder={`email,linkedin_url\njohn@example.com,https://linkedin.com/in/john\njane@example.com,`}
+              rows={5}
+              className="w-full px-3 py-2 rounded-lg border border-neon-dark/15 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-neon-dark bg-neon-bg resize-none"
+            />
+            {csvText.trim() && (
+              <p className="text-xs text-neon-dark/50 mt-1">
+                {(() => {
+                  const lines = csvText
+                    .trim()
+                    .split("\n")
+                    .map((l) => l.trim())
+                    .filter(Boolean);
+                  const hasHeader =
+                    lines[0]?.toLowerCase().includes("email") || false;
+                  const dataLines = hasHeader
+                    ? lines.length - 1
+                    : lines.length;
+                  return `${dataLines} guest${dataLines !== 1 ? "s" : ""} detected${hasHeader ? " (header row skipped)" : ""}`;
+                })()}
+              </p>
+            )}
+          </div>
+
+          {/* Submit */}
+          <div className="flex justify-end gap-3 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setShowCreate(false);
+                setNewEvent({
+                  name: "",
+                  slug: "",
+                  event_date: "",
+                  location: "",
+                  description: "",
+                });
+                setLumaUrl("");
+                setCsvText("");
+                setFetchError("");
+              }}
+              className="px-4 py-2 text-neon-dark/60 text-sm font-medium hover:text-neon-dark transition-colors"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
-              disabled={creating}
+              disabled={creating || !newEvent.name || !newEvent.slug}
               className="px-6 py-2 bg-neon-dark text-neon rounded-xl text-sm font-semibold hover:bg-neon-dark/90 transition-colors disabled:opacity-50"
             >
-              {creating ? "Creating..." : "Create Event"}
+              {creating
+                ? "Creating..."
+                : csvText.trim()
+                  ? "Create Event & Import Guests"
+                  : "Create Event"}
             </button>
           </div>
         </form>
