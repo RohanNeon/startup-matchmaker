@@ -943,62 +943,68 @@ function EmailsTab({
   sendResult: string;
   handleBatchSend: () => void;
 }) {
+  const matchesExist = matches.length > 0;
+  const uniqueRecipients = new Set(matches.map((m) => m.profile_email)).size;
+
   return (
     <div className="space-y-4">
       {/* Step 1: Compute Matches */}
       <div className="bg-white rounded-2xl border border-neon-dark/10 p-5">
         <div className="flex items-center gap-2 mb-1">
-          <span className="w-6 h-6 flex items-center justify-center bg-neon-dark text-neon rounded-full text-xs font-bold">
-            1
+          <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${
+            matchesExist ? "bg-green-100 text-green-700" : "bg-neon-dark text-neon"
+          }`}>
+            {matchesExist ? "✓" : "1"}
           </span>
           <h3 className="text-sm font-semibold text-neon-dark">
             Compute Matches
           </h3>
         </div>
-        <p className="text-xs text-neon-dark/40 mb-3 ml-8">
-          Run the matching algorithm on {participants.length} registered
-          participants.{" "}
-          {matches.length > 0 &&
-            `(${matches.length} matches already computed)`}
-        </p>
-        <div className="ml-8 flex items-center gap-3">
-          <button
-            onClick={handleComputeMatches}
-            disabled={computing || participants.length < 2}
-            className="px-4 py-2 bg-neon-dark text-neon rounded-xl text-sm font-semibold hover:bg-neon-dark/90 transition-colors disabled:opacity-50"
-          >
-            {computing
-              ? "Computing..."
-              : matches.length > 0
-              ? "Recompute Matches"
-              : "Compute Matches"}
-          </button>
-          {computeResult && (
-            <p className="text-sm text-neon-dark/60">{computeResult}</p>
-          )}
-        </div>
+        {matchesExist ? (
+          <p className="text-xs text-green-600 ml-8">
+            {matches.length} matches computed for {uniqueRecipients} participants
+          </p>
+        ) : (
+          <>
+            <p className="text-xs text-neon-dark/40 mb-3 ml-8">
+              Run the matching algorithm on {participants.length} registered participants.
+            </p>
+            <div className="ml-8 flex items-center gap-3">
+              <button
+                onClick={handleComputeMatches}
+                disabled={computing || participants.length < 2}
+                className="px-4 py-2 bg-neon-dark text-neon rounded-xl text-sm font-semibold hover:bg-neon-dark/90 transition-colors disabled:opacity-50"
+              >
+                {computing ? "Computing..." : "Compute Matches"}
+              </button>
+              {computeResult && (
+                <p className="text-sm text-neon-dark/60">{computeResult}</p>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Step 2: Dry Run */}
-      <div className="bg-white rounded-2xl border border-neon-dark/10 p-5">
+      {/* Step 2: Preview Recipients */}
+      <div className={`bg-white rounded-2xl border border-neon-dark/10 p-5 ${!matchesExist ? "opacity-40 pointer-events-none" : ""}`}>
         <div className="flex items-center gap-2 mb-1">
           <span className="w-6 h-6 flex items-center justify-center bg-neon-dark text-neon rounded-full text-xs font-bold">
             2
           </span>
           <h3 className="text-sm font-semibold text-neon-dark">
-            Dry Run (Preview)
+            Preview Recipients
           </h3>
         </div>
         <p className="text-xs text-neon-dark/40 mb-3 ml-8">
-          See who would receive emails without actually sending anything.
+          See the full list of who will receive emails and how many matches each person has. No emails are sent.
         </p>
         <div className="ml-8">
           <button
             onClick={handleDryRun}
-            disabled={sendingDryRun || matches.length === 0}
+            disabled={sendingDryRun || !matchesExist}
             className="px-4 py-2 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-sm font-semibold hover:bg-amber-100 transition-colors disabled:opacity-50"
           >
-            {sendingDryRun ? "Running..." : "Run Dry Run"}
+            {sendingDryRun ? "Loading..." : "Preview List"}
           </button>
           {dryRunResult && (
             <pre className="mt-3 text-xs text-neon-dark/60 bg-neon-bg rounded-lg p-3 whitespace-pre-wrap font-mono">
@@ -1009,7 +1015,7 @@ function EmailsTab({
       </div>
 
       {/* Step 3: Test Send */}
-      <div className="bg-white rounded-2xl border border-neon-dark/10 p-5">
+      <div className={`bg-white rounded-2xl border border-neon-dark/10 p-5 ${!matchesExist ? "opacity-40 pointer-events-none" : ""}`}>
         <div className="flex items-center gap-2 mb-1">
           <span className="w-6 h-6 flex items-center justify-center bg-neon-dark text-neon rounded-full text-xs font-bold">
             3
@@ -1019,19 +1025,19 @@ function EmailsTab({
           </h3>
         </div>
         <p className="text-xs text-neon-dark/40 mb-3 ml-8">
-          Send a real match email to ONE person to verify it looks correct.
+          Send a real email to ONE person to check it looks right on mobile and desktop before sending to everyone.
         </p>
         <div className="ml-8 flex items-center gap-2">
           <input
             type="email"
             value={testEmail}
             onChange={(e) => setTestEmail(e.target.value)}
-            placeholder="test@example.com"
+            placeholder="rohan@neon.fund"
             className="px-3 py-2 rounded-lg border border-neon-dark/15 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-neon-dark bg-white"
           />
           <button
             onClick={handleSendTestEmail}
-            disabled={sendingTest || !testEmail || matches.length === 0}
+            disabled={sendingTest || !testEmail || !matchesExist}
             className="px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-sm font-semibold hover:bg-blue-100 transition-colors disabled:opacity-50"
           >
             {sendingTest ? "Sending..." : "Send Test"}
