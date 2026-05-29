@@ -19,11 +19,23 @@ interface EventWithStats {
   matchCount: number;
 }
 
+interface DashboardMetrics {
+  totalEvents: number;
+  totalGuests: number;
+  totalRegistered: number;
+  totalMatches: number;
+  overallConversion: number;
+  activeEvents: number;
+  repeatRegistrations: number;
+  repeatEmails: string[];
+}
+
 export default function AdminPage() {
   const adminUser = useAdminUser();
   const isSuperAdmin = adminUser?.role === "super_admin";
 
   const [events, setEvents] = useState<EventWithStats[]>([]);
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Create event form
@@ -43,8 +55,50 @@ export default function AdminPage() {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    loadEvents();
+    loadAll();
   }, []);
+
+  async function loadAll() {
+    await Promise.all([loadEvents(), loadMetrics()]);
+    setLoading(false);
+  }
+
+  async function loadMetrics() {
+    // Get all profiles to find repeat registrations
+    const { data: allProfiles } = await supabase
+      .from("profiles")
+      .select("email, event_id");
+
+    // Count emails that appear in more than one event
+    const emailEventMap = new Map<string, Set<string>>();
+    if (allProfiles) {
+      for (const p of allProfiles) {
+        const eventKey = p.event_id || "legacy";
+        if (!emailEventMap.has(p.email)) {
+          emailEventMap.set(p.email, new Set());
+        }
+        emailEventMap.get(p.email)!.add(eventKey);
+      }
+    }
+
+    const repeatEmails: string[] = [];
+    emailEventMap.forEach((events, email) => {
+      if (events.size > 1) {
+        repeatEmails.push(email);
+      }
+    });
+
+    setMetrics({
+      totalEvents: 0, // filled after events load
+      totalGuests: 0,
+      totalRegistered: allProfiles?.length || 0,
+      totalMatches: 0,
+      overallConversion: 0,
+      activeEvents: 0,
+      repeatRegistrations: repeatEmails.length,
+      repeatEmails,
+    });
+  }
 
   async function loadEvents() {
     const { data: eventsData } = await supabase
@@ -52,10 +106,7 @@ export default function AdminPage() {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (!eventsData) {
-      setLoading(false);
-      return;
-    }
+    if (!eventsData) return;
 
     const eventsWithStats: EventWithStats[] = [];
 
@@ -88,12 +139,10 @@ export default function AdminPage() {
       .from("luma_list")
       .select("*", { count: "exact", head: true })
       .is("event_id", null);
-
     const { count: e1Profiles } = await supabase
       .from("profiles")
       .select("*", { count: "exact", head: true })
       .is("event_id", null);
-
     const { count: e1Matches } = await supabase
       .from("matches")
       .select("*", { count: "exact", head: true })
@@ -108,8 +157,33 @@ export default function AdminPage() {
       eventsWithStats[agenticIdx].matchCount = e1Matches || 0;
     }
 
+    // Compute aggregate metrics
+    const totalGuests = eventsWithStats.reduce((s, e) => s + e.guestCount, 0);
+    const totalRegistered = eventsWithStats.reduce(
+      (s, e) => s + e.profileCount,
+      0
+    );
+    const totalMatches = eventsWithStats.reduce(
+      (s, e) => s + e.matchCount,
+      0
+    );
+    const activeEvents = eventsWithStats.filter((e) => e.is_active).length;
+
+    setMetrics((prev) => ({
+      ...(prev || {
+        repeatRegistrations: 0,
+        repeatEmails: [],
+      }),
+      totalEvents: eventsWithStats.length,
+      totalGuests,
+      totalRegistered,
+      totalMatches,
+      overallConversion:
+        totalGuests > 0 ? Math.round((totalRegistered / totalGuests) * 100) : 0,
+      activeEvents,
+    }));
+
     setEvents(eventsWithStats);
-    setLoading(false);
   }
 
   async function getAuthHeaders(): Promise<Record<string, string>> {
@@ -214,7 +288,8 @@ export default function AdminPage() {
       }
 
       resetForm();
-      await loadEvents();
+      setLoading(true);
+      await loadAll();
     }
     setCreating(false);
   }
@@ -243,101 +318,202 @@ export default function AdminPage() {
   }
 
   return (
-    <div>
-      {/* Page header */}
-      <div className="flex items-end justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-[#000000] tracking-tight">
-            Events
-          </h1>
-          <p className="text-sm text-[#1d3d0f]/40 mt-0.5">
-            {events.length} event{events.length !== 1 ? "s" : ""} total
-          </p>
-        </div>
-        {isSuperAdmin && !showCreate && (
-          <button
-            onClick={() => setShowCreate(true)}
-            className="px-5 py-2.5 bg-[#1d3d0f] text-[#e8ff79] rounded-lg text-sm font-semibold hover:bg-[#000000] transition-colors"
-          >
-            + New Event
-          </button>
-        )}
-      </div>
+    <div className="space-y-10">
+      {/* ── Dashboard metrics ── */}
+      <section>
+        <h1 className="text-2xl font-bold text-[#000000] tracking-tight mb-6">
+          Dashboard
+        </h1>
 
-      {/* Create event form */}
-      {showCreate && (
-        <div className="bg-[#ffffff] rounded-2xl border border-[#1d3d0f]/10 mb-8 overflow-hidden">
-          <div className="px-6 py-4 bg-[#1d3d0f] flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[#e8ff79]">
-              Create New Event
-            </h2>
-            <button
-              onClick={resetForm}
-              className="text-xs text-[#ffffff]/40 hover:text-[#ffffff]/70 transition-colors"
-            >
-              Cancel
-            </button>
+        {/* Top-level stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <MetricCard label="Total Events" value={metrics?.totalEvents ?? 0} />
+          <MetricCard
+            label="Active"
+            value={metrics?.activeEvents ?? 0}
+            accent
+          />
+          <MetricCard
+            label="Total Guests"
+            value={metrics?.totalGuests ?? 0}
+          />
+          <MetricCard
+            label="Registered"
+            value={metrics?.totalRegistered ?? 0}
+            accent
+          />
+          <MetricCard label="Matches" value={metrics?.totalMatches ?? 0} />
+          <MetricCard
+            label="Avg Conversion"
+            value={`${metrics?.overallConversion ?? 0}%`}
+          />
+        </div>
+
+        {/* Second row — repeat registrations + per-event breakdown */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
+          {/* Repeat registrations card */}
+          <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider">
+                Repeat Attendees
+              </h3>
+              <span className="text-xl font-bold text-[#1d3d0f]">
+                {metrics?.repeatRegistrations ?? 0}
+              </span>
+            </div>
+            <p className="text-xs text-[#1d3d0f]/40 mb-3">
+              People who registered for more than one event
+            </p>
+            {metrics && metrics.repeatEmails.length > 0 ? (
+              <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                {metrics.repeatEmails.map((email) => (
+                  <div
+                    key={email}
+                    className="flex items-center gap-2 text-xs text-[#1d3d0f]/70"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#e8ff79] flex-shrink-0" />
+                    <span className="truncate">{email}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-[#1d3d0f]/25 italic">
+                No repeat attendees yet
+              </p>
+            )}
           </div>
 
-          <form onSubmit={handleCreateEvent} className="p-6 space-y-6">
-            {/* Luma import */}
-            <div>
-              <label className="block text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-2">
-                Import from Luma
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  value={lumaUrl}
-                  onChange={(e) => setLumaUrl(e.target.value)}
-                  placeholder="https://lu.ma/your-event"
-                  className="flex-1 px-3 py-2.5 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/25 focus:outline-none focus:border-[#1d3d0f]/30 transition-colors"
-                />
-                <button
-                  type="button"
-                  onClick={handleFetchLuma}
-                  disabled={fetching || !lumaUrl.trim()}
-                  className="px-4 py-2.5 bg-[#e8ff79] text-[#1d3d0f] rounded-lg text-sm font-semibold hover:bg-[#e8ff79]/80 transition-colors disabled:opacity-30"
-                >
-                  {fetching ? "Fetching..." : "Fetch"}
-                </button>
-              </div>
-              {fetchError && (
-                <p className="text-xs text-red-600 mt-2">{fetchError}</p>
-              )}
-              {newEvent.name && !fetchError && lumaUrl && (
-                <div className="mt-3 flex items-center gap-3 p-3 rounded-lg bg-[#e8ff79]/20 border border-[#e8ff79]/40">
-                  {newEvent.image_url && (
-                    <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 border border-[#1d3d0f]/10">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={newEvent.image_url}
-                        alt={newEvent.name}
-                        className="w-full h-full object-cover"
+          {/* Per-event conversion breakdown */}
+          <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-5">
+            <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
+              Conversion by Event
+            </h3>
+            <div className="space-y-3">
+              {events.map((event) => {
+                const pct =
+                  event.guestCount > 0
+                    ? Math.round(
+                        (event.profileCount / event.guestCount) * 100
+                      )
+                    : 0;
+                return (
+                  <div key={event.id}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium text-[#000000] truncate mr-3">
+                        {event.name}
+                      </span>
+                      <span className="text-xs font-bold text-[#1d3d0f] flex-shrink-0">
+                        {pct}%
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-[#1d3d0f]/5 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#e8ff79] rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(pct, 100)}%` }}
                       />
                     </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[#000000] truncate">
-                      {newEvent.name}
-                    </p>
-                    <p className="text-xs text-[#1d3d0f]/50 mt-0.5">
-                      Details imported
-                    </p>
                   </div>
-                </div>
+                );
+              })}
+              {events.length === 0 && (
+                <p className="text-xs text-[#1d3d0f]/25 italic">
+                  No events yet
+                </p>
               )}
             </div>
+          </div>
+        </div>
+      </section>
 
-            <div className="border-t border-[#1d3d0f]/6" />
+      {/* ── Events list ── */}
+      <section>
+        <div className="flex items-end justify-between mb-5">
+          <h2 className="text-lg font-bold text-[#000000] tracking-tight">
+            Events
+          </h2>
+          {isSuperAdmin && !showCreate && (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="px-4 py-2 bg-[#1d3d0f] text-[#e8ff79] rounded-lg text-sm font-semibold hover:bg-[#000000] transition-colors"
+            >
+              + New Event
+            </button>
+          )}
+        </div>
 
-            {/* Event fields */}
-            <div>
-              <p className="text-xs text-[#1d3d0f]/35 mb-4">
-                Auto-filled from Luma, or enter manually.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField label="Event name" required>
+        {/* Create event form */}
+        {showCreate && (
+          <div className="bg-[#ffffff] rounded-xl border border-[#1d3d0f]/10 mb-5 overflow-hidden">
+            <div className="px-5 py-3.5 bg-[#1d3d0f] flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-[#e8ff79]">
+                Create New Event
+              </h3>
+              <button
+                onClick={resetForm}
+                className="text-xs text-[#ffffff]/40 hover:text-[#ffffff] transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateEvent} className="p-5 space-y-5">
+              {/* Luma import */}
+              <div>
+                <label className="block text-[11px] font-semibold text-[#1d3d0f]/45 uppercase tracking-wider mb-2">
+                  Import from Luma
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={lumaUrl}
+                    onChange={(e) => setLumaUrl(e.target.value)}
+                    placeholder="https://lu.ma/your-event"
+                    className="flex-1 px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/20 focus:outline-none focus:border-[#1d3d0f]/25 transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleFetchLuma}
+                    disabled={fetching || !lumaUrl.trim()}
+                    className="px-4 py-2 bg-[#e8ff79] text-[#1d3d0f] rounded-lg text-sm font-semibold hover:bg-[#e8ff79]/80 transition-colors disabled:opacity-30"
+                  >
+                    {fetching ? "..." : "Fetch"}
+                  </button>
+                </div>
+                {fetchError && (
+                  <p className="text-xs text-red-600 mt-1.5">{fetchError}</p>
+                )}
+                {newEvent.name && !fetchError && lumaUrl && (
+                  <div className="mt-2.5 flex items-center gap-3 p-2.5 rounded-lg bg-[#e8ff79]/15 border border-[#e8ff79]/30">
+                    {newEvent.image_url && (
+                      <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-[#1d3d0f]/8">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={newEvent.image_url}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[#000000] truncate">
+                        {newEvent.name}
+                      </p>
+                      <p className="text-[11px] text-[#1d3d0f]/40">
+                        Imported
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-[#1d3d0f]/5" />
+
+              {/* Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-medium text-[#1d3d0f]/45 mb-1">
+                    Event name <span className="text-red-400">*</span>
+                  </label>
                   <input
                     type="text"
                     value={newEvent.name}
@@ -346,9 +522,16 @@ export default function AdminPage() {
                     }
                     placeholder="Cybersecurity AI"
                     required
+                    className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/20 focus:outline-none focus:border-[#1d3d0f]/25 transition-colors"
                   />
-                </FormField>
-                <FormField label="Slug" sublabel="/event/your-slug" required>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-[#1d3d0f]/45 mb-1">
+                    Slug <span className="text-red-400">*</span>
+                    <span className="text-[#1d3d0f]/20 ml-1 font-normal">
+                      /event/...
+                    </span>
+                  </label>
                   <input
                     type="text"
                     value={newEvent.slug}
@@ -362,19 +545,26 @@ export default function AdminPage() {
                     }
                     placeholder="cybersecurity-ai"
                     required
-                    className="!font-mono !text-xs"
+                    className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm font-mono bg-[#ffffff] placeholder:text-[#1d3d0f]/20 placeholder:font-sans focus:outline-none focus:border-[#1d3d0f]/25 transition-colors"
                   />
-                </FormField>
-                <FormField label="Date">
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-[#1d3d0f]/45 mb-1">
+                    Date
+                  </label>
                   <input
                     type="date"
                     value={newEvent.event_date}
                     onChange={(e) =>
                       setNewEvent({ ...newEvent, event_date: e.target.value })
                     }
+                    className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] focus:outline-none focus:border-[#1d3d0f]/25 transition-colors"
                   />
-                </FormField>
-                <FormField label="Location">
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-[#1d3d0f]/45 mb-1">
+                    Location
+                  </label>
                   <input
                     type="text"
                     value={newEvent.location}
@@ -382,245 +572,230 @@ export default function AdminPage() {
                       setNewEvent({ ...newEvent, location: e.target.value })
                     }
                     placeholder="Bangalore"
-                  />
-                </FormField>
-              </div>
-              <div className="mt-4">
-                <FormField label="Description">
-                  <textarea
-                    value={newEvent.description}
-                    onChange={(e) =>
-                      setNewEvent({ ...newEvent, description: e.target.value })
-                    }
-                    placeholder="Brief event description..."
-                    rows={2}
-                    className="resize-none"
-                  />
-                </FormField>
-              </div>
-            </div>
-
-            {/* CSV */}
-            <div>
-              <label className="block text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-2">
-                Guest List (CSV)
-              </label>
-              <p className="text-xs text-[#1d3d0f]/35 mb-2">
-                Paste CSV with email column (required) and optional LinkedIn
-                column.
-              </p>
-              <textarea
-                value={csvText}
-                onChange={(e) => setCsvText(e.target.value)}
-                placeholder={`email,linkedin_url\njohn@example.com,https://linkedin.com/in/john`}
-                rows={4}
-                className="w-full px-3 py-2.5 rounded-lg border border-[#1d3d0f]/10 text-sm font-mono bg-[#fdfff0] placeholder:text-[#1d3d0f]/20 focus:outline-none focus:border-[#1d3d0f]/30 resize-none transition-colors"
-              />
-              {csvText.trim() && (
-                <p className="text-xs text-[#1d3d0f]/40 mt-1.5">
-                  {(() => {
-                    const lines = csvText
-                      .trim()
-                      .split("\n")
-                      .map((l) => l.trim())
-                      .filter(Boolean);
-                    const hasHeader =
-                      lines[0]?.toLowerCase().includes("email") || false;
-                    const dataLines = hasHeader
-                      ? lines.length - 1
-                      : lines.length;
-                    return `${dataLines} guest${dataLines !== 1 ? "s" : ""} detected`;
-                  })()}
-                </p>
-              )}
-            </div>
-
-            {/* Submit */}
-            <div className="flex justify-end pt-2">
-              <button
-                type="submit"
-                disabled={creating || !newEvent.name || !newEvent.slug}
-                className="px-6 py-2.5 bg-[#1d3d0f] text-[#e8ff79] rounded-lg text-sm font-semibold hover:bg-[#000000] transition-colors disabled:opacity-40"
-              >
-                {creating
-                  ? "Creating..."
-                  : csvText.trim()
-                    ? "Create Event & Import Guests"
-                    : "Create Event"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Event cards */}
-      <div className="space-y-4">
-        {events.map((event) => (
-          <Link
-            key={event.id}
-            href={`/admin/event/${event.slug}`}
-            className="group block bg-[#ffffff] rounded-2xl border border-[#1d3d0f]/8 hover:border-[#1d3d0f]/20 transition-all hover:shadow-md"
-          >
-            <div className="flex items-stretch">
-              {/* Content */}
-              <div className="flex-1 p-5 sm:p-6 min-w-0">
-                {/* Title & status */}
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-[17px] font-bold text-[#000000] group-hover:text-[#1d3d0f] transition-colors">
-                      {event.name}
-                    </h2>
-                    <p className="text-[13px] text-[#1d3d0f]/45 mt-1">
-                      {event.event_date
-                        ? new Date(event.event_date).toLocaleDateString(
-                            "en-IN",
-                            {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            }
-                          )
-                        : "Date TBD"}
-                      {event.location && (
-                        <>
-                          <span className="mx-1.5 text-[#1d3d0f]/20">
-                            |
-                          </span>
-                          {event.location}
-                        </>
-                      )}
-                    </p>
-                  </div>
-                  <span
-                    className={`flex-shrink-0 text-[11px] px-2.5 py-1 rounded-md font-semibold ${
-                      event.is_active
-                        ? "bg-[#e8ff79] text-[#1d3d0f]"
-                        : "bg-[#000000]/5 text-[#000000]/35"
-                    }`}
-                  >
-                    {event.is_active ? "Active" : "Closed"}
-                  </span>
-                </div>
-
-                {/* Stats */}
-                <div className="flex items-center gap-5">
-                  <Stat label="Guests" value={event.guestCount} />
-                  <Stat
-                    label="Registered"
-                    value={event.profileCount}
-                    highlight
-                  />
-                  <Stat label="Matches" value={event.matchCount} />
-                  <Stat
-                    label="Conversion"
-                    value={
-                      event.guestCount > 0
-                        ? `${Math.round(
-                            (event.profileCount / event.guestCount) * 100
-                          )}%`
-                        : "--"
-                    }
+                    className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/20 focus:outline-none focus:border-[#1d3d0f]/25 transition-colors"
                   />
                 </div>
-
-                <p className="text-[11px] text-[#1d3d0f]/20 mt-4 font-mono">
-                  /event/{event.slug}
-                </p>
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-[#1d3d0f]/45 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={newEvent.description}
+                  onChange={(e) =>
+                    setNewEvent({ ...newEvent, description: e.target.value })
+                  }
+                  placeholder="Brief event description..."
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/20 focus:outline-none focus:border-[#1d3d0f]/25 resize-none transition-colors"
+                />
               </div>
 
-              {/* Image */}
-              {event.image_url && (
-                <div className="hidden sm:flex items-center pr-5 sm:pr-6">
-                  <div className="w-[130px] h-[130px] rounded-xl overflow-hidden border border-[#1d3d0f]/8 flex-shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={event.image_url}
-                      alt={event.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          </Link>
-        ))}
-      </div>
+              <div className="border-t border-[#1d3d0f]/5" />
 
-      {/* Empty state */}
-      {events.length === 0 && (
-        <div className="text-center py-20">
-          <p className="text-sm text-[#1d3d0f]/40">No events yet</p>
-          <p className="text-xs text-[#1d3d0f]/25 mt-1">
-            Create your first event to get started
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
+              {/* CSV */}
+              <div>
+                <label className="block text-[11px] font-semibold text-[#1d3d0f]/45 uppercase tracking-wider mb-1">
+                  Guest List (CSV)
+                </label>
+                <textarea
+                  value={csvText}
+                  onChange={(e) => setCsvText(e.target.value)}
+                  placeholder={`email,linkedin_url\njohn@example.com,https://linkedin.com/in/john`}
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm font-mono bg-[#fdfff0] placeholder:text-[#1d3d0f]/15 focus:outline-none focus:border-[#1d3d0f]/25 resize-none transition-colors"
+                />
+                {csvText.trim() && (
+                  <p className="text-[11px] text-[#1d3d0f]/35 mt-1">
+                    {(() => {
+                      const lines = csvText
+                        .trim()
+                        .split("\n")
+                        .map((l) => l.trim())
+                        .filter(Boolean);
+                      const hasHeader =
+                        lines[0]?.toLowerCase().includes("email") || false;
+                      const n = hasHeader ? lines.length - 1 : lines.length;
+                      return `${n} guest${n !== 1 ? "s" : ""} detected`;
+                    })()}
+                  </p>
+                )}
+              </div>
 
-/* ─── Sub-components ─── */
-
-function FormField({
-  label,
-  sublabel,
-  required,
-  children,
-}: {
-  label: string;
-  sublabel?: string;
-  required?: boolean;
-  children: React.ReactElement<React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>>;
-}) {
-  // Clone the child input/textarea and inject shared styles
-  const { className: childClass = "", ...childProps } = children.props;
-  const baseClass = `w-full px-3 py-2.5 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/25 focus:outline-none focus:border-[#1d3d0f]/30 transition-colors ${childClass}`;
-
-  return (
-    <div>
-      <label className="block text-xs font-medium text-[#1d3d0f]/55 mb-1.5">
-        {label}
-        {required && <span className="text-red-400 ml-0.5">*</span>}
-        {sublabel && (
-          <span className="text-[#1d3d0f]/25 font-normal ml-1">
-            {sublabel}
-          </span>
+              {/* Submit */}
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={creating || !newEvent.name || !newEvent.slug}
+                  className="px-5 py-2.5 bg-[#1d3d0f] text-[#e8ff79] rounded-lg text-sm font-semibold hover:bg-[#000000] transition-colors disabled:opacity-40"
+                >
+                  {creating
+                    ? "Creating..."
+                    : csvText.trim()
+                      ? "Create & Import Guests"
+                      : "Create Event"}
+                </button>
+              </div>
+            </form>
+          </div>
         )}
-      </label>
-      {children.type === "textarea" ? (
-        <textarea {...(childProps as React.TextareaHTMLAttributes<HTMLTextAreaElement>)} className={baseClass} />
-      ) : (
-        <input {...(childProps as React.InputHTMLAttributes<HTMLInputElement>)} className={baseClass} />
-      )}
+
+        {/* Event cards */}
+        <div className="space-y-3">
+          {events.map((event) => {
+            const pct =
+              event.guestCount > 0
+                ? Math.round(
+                    (event.profileCount / event.guestCount) * 100
+                  )
+                : 0;
+
+            return (
+              <Link
+                key={event.id}
+                href={`/admin/event/${event.slug}`}
+                className="group block bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 hover:border-[#1d3d0f]/18 transition-all"
+              >
+                <div className="p-5 flex gap-5">
+                  {/* Image thumbnail */}
+                  {event.image_url && (
+                    <div className="hidden sm:block w-24 h-24 rounded-lg overflow-hidden border border-[#1d3d0f]/8 flex-shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={event.image_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="text-[15px] font-bold text-[#000000] truncate">
+                          {event.name}
+                        </h3>
+                        <p className="text-xs text-[#1d3d0f]/40 mt-0.5">
+                          {event.event_date
+                            ? new Date(
+                                event.event_date
+                              ).toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              })
+                            : "Date TBD"}
+                          {event.location && (
+                            <>
+                              <span className="mx-1 text-[#1d3d0f]/15">
+                                |
+                              </span>
+                              {event.location}
+                            </>
+                          )}
+                        </p>
+                      </div>
+                      <span
+                        className={`flex-shrink-0 text-[10px] px-2 py-0.5 rounded font-semibold ${
+                          event.is_active
+                            ? "bg-[#e8ff79] text-[#1d3d0f]"
+                            : "bg-[#000000]/5 text-[#000000]/30"
+                        }`}
+                      >
+                        {event.is_active ? "Active" : "Closed"}
+                      </span>
+                    </div>
+
+                    {/* Stats row */}
+                    <div className="flex items-center gap-4 mt-3">
+                      <MiniStat label="Guests" value={event.guestCount} />
+                      <MiniStat
+                        label="Registered"
+                        value={event.profileCount}
+                        accent
+                      />
+                      <MiniStat label="Matches" value={event.matchCount} />
+                      <MiniStat label="Conv." value={`${pct}%`} />
+                    </div>
+                  </div>
+
+                  {/* Arrow */}
+                  <div className="hidden sm:flex items-center flex-shrink-0">
+                    <svg
+                      className="w-4 h-4 text-[#1d3d0f]/15 group-hover:text-[#1d3d0f]/40 transition-colors"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+
+        {events.length === 0 && (
+          <div className="text-center py-16">
+            <p className="text-sm text-[#1d3d0f]/35">No events yet</p>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
 
-function Stat({
+/* ─── Components ─── */
+
+function MetricCard({
   label,
   value,
-  highlight,
+  accent,
 }: {
   label: string;
   value: number | string;
-  highlight?: boolean;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-xl border p-4 ${
+        accent
+          ? "bg-[#e8ff79]/30 border-[#e8ff79]/50"
+          : "bg-[#fdfff0] border-[#1d3d0f]/8"
+      }`}
+    >
+      <p className="text-2xl font-bold text-[#000000] leading-none">{value}</p>
+      <p className="text-[11px] text-[#1d3d0f]/40 mt-1.5">{label}</p>
+    </div>
+  );
+}
+
+function MiniStat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number | string;
+  accent?: boolean;
 }) {
   return (
     <div>
-      <p
-        className={`text-lg font-bold leading-none ${
-          highlight ? "text-[#1d3d0f]" : "text-[#000000]"
-        }`}
-      >
-        {highlight ? (
-          <span className="bg-[#e8ff79] px-1.5 py-0.5 rounded">
-            {value}
-          </span>
+      <p className="text-sm font-bold text-[#000000] leading-none">
+        {accent ? (
+          <span className="bg-[#e8ff79] px-1 rounded">{value}</span>
         ) : (
           value
         )}
       </p>
-      <p className="text-[11px] text-[#1d3d0f]/35 mt-1">{label}</p>
+      <p className="text-[10px] text-[#1d3d0f]/30 mt-0.5">{label}</p>
     </div>
   );
 }

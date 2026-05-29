@@ -114,7 +114,7 @@ export default function AdminLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fdfff0] flex items-center justify-center">
+      <div className="min-h-screen bg-[#ffffff] flex items-center justify-center">
         <div className="w-5 h-5 border-2 border-[#1d3d0f]/30 border-t-[#1d3d0f] rounded-full animate-spin" />
       </div>
     );
@@ -122,7 +122,7 @@ export default function AdminLayout({
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#fdfff0] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#ffffff] flex items-center justify-center px-4">
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
             <div className="inline-block mb-4">
@@ -144,7 +144,7 @@ export default function AdminLayout({
           <div className="bg-[#ffffff] rounded-2xl border border-[#1d3d0f]/10 p-6 space-y-4">
             <button
               onClick={handleGoogleLogin}
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-[#ffffff] border border-[#1d3d0f]/15 rounded-xl text-sm font-medium text-[#000000] hover:bg-[#fdfff0] transition-colors"
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-[#ffffff] border border-[#1d3d0f]/15 rounded-xl text-sm font-medium text-[#000000] hover:bg-[#ffffff] transition-colors"
             >
               <svg width="18" height="18" viewBox="0 0 48 48">
                 <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -168,7 +168,7 @@ export default function AdminLayout({
 
   return (
     <AdminContext.Provider value={user}>
-      <div className="min-h-screen bg-[#fdfff0]">
+      <div className="min-h-screen bg-[#ffffff]">
         {/* Header */}
         <header className="sticky top-0 z-50 bg-[#1d3d0f]">
           <div className="max-w-5xl mx-auto px-5 sm:px-6 h-14 flex items-center justify-between">
