@@ -29,6 +29,7 @@ interface Participant {
 interface GuestEntry {
   email: string;
   linkedin_url: string | null;
+  checked_in: boolean;
 }
 
 interface MatchEntry {
@@ -119,7 +120,7 @@ export default function EventDashboard({
     // Fetch guest list
     let guestsQuery = supabase
       .from("luma_list")
-      .select("email, linkedin_url")
+      .select("email, linkedin_url, checked_in")
       .order("email", { ascending: true });
 
     if (isLegacyEvent) {
@@ -374,8 +375,7 @@ export default function EventDashboard({
   }
 
   const uniqueMatchProfiles = new Set(matches.map((m) => m.profile_email)).size;
-  const registeredEmails = new Set(participants.map((p) => p.email.toLowerCase()));
-  const checkedInCount = guests.filter((g) => registeredEmails.has(g.email.toLowerCase())).length;
+  const checkedInCount = guests.filter((g) => g.checked_in).length;
 
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: "participants", label: "Registered", count: participants.length },
@@ -749,60 +749,59 @@ function CheckInsTab({
     registeredMap.set(p.email.toLowerCase(), p);
   }
 
-  // Sort: checked-in first, then not checked-in
-  const sorted = [...guests].sort((a, b) => {
-    const aChecked = registeredMap.has(a.email.toLowerCase()) ? 0 : 1;
-    const bChecked = registeredMap.has(b.email.toLowerCase()) ? 0 : 1;
-    return aChecked - bChecked;
-  });
+  // Three groups
+  const checkedInAndRegistered = guests.filter(
+    (g) => g.checked_in && registeredMap.has(g.email.toLowerCase())
+  );
+  const checkedInNotRegistered = guests.filter(
+    (g) => g.checked_in && !registeredMap.has(g.email.toLowerCase())
+  );
+  const notCheckedIn = guests.filter((g) => !g.checked_in);
 
-  const checkedIn = sorted.filter((g) =>
-    registeredMap.has(g.email.toLowerCase())
-  );
-  const notCheckedIn = sorted.filter(
-    (g) => !registeredMap.has(g.email.toLowerCase())
-  );
+  const totalCheckedIn = checkedInAndRegistered.length + checkedInNotRegistered.length;
 
   return (
     <div className="space-y-4">
       {/* Summary */}
-      <div className="bg-white rounded-2xl border border-neon-dark/10 p-4 flex items-center gap-6">
+      <div className="bg-white rounded-2xl border border-neon-dark/10 p-4 flex flex-wrap items-center gap-5">
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-green-500" />
           <span className="text-sm text-neon-dark">
-            <span className="font-semibold">{checkedIn.length}</span> checked in
+            <span className="font-semibold">{checkedInAndRegistered.length}</span> checked in + registered
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-amber-400" />
+          <span className="text-sm text-neon-dark">
+            <span className="font-semibold">{checkedInNotRegistered.length}</span> checked in, not registered
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-neon-dark/15" />
           <span className="text-sm text-neon-dark">
-            <span className="font-semibold">{notCheckedIn.length}</span> not
-            registered
+            <span className="font-semibold">{notCheckedIn.length}</span> not checked in
           </span>
         </div>
         <div className="ml-auto text-sm text-neon-dark/40">
-          {guests.length > 0
-            ? `${Math.round((checkedIn.length / guests.length) * 100)}% conversion`
-            : "—"}
+          {totalCheckedIn} / {guests.length} attended
+          {totalCheckedIn > 0 &&
+            ` · ${Math.round((checkedInAndRegistered.length / totalCheckedIn) * 100)}% filled form`}
         </div>
       </div>
 
-      {/* Checked in */}
-      {checkedIn.length > 0 && (
+      {/* Checked in + Registered */}
+      {checkedInAndRegistered.length > 0 && (
         <div className="bg-white rounded-2xl border border-neon-dark/10 overflow-hidden">
           <div className="px-4 py-3 border-b border-neon-dark/10 bg-green-50/50">
             <h3 className="text-sm font-semibold text-green-800">
-              Checked In ({checkedIn.length})
+              Checked In + Registered ({checkedInAndRegistered.length})
             </h3>
           </div>
           <div className="divide-y divide-neon-dark/5">
-            {checkedIn.map((g) => {
+            {checkedInAndRegistered.map((g) => {
               const p = registeredMap.get(g.email.toLowerCase());
               return (
-                <div
-                  key={g.email}
-                  className="flex items-center gap-3 px-4 py-3"
-                >
+                <div key={g.email} className="flex items-center gap-3 px-4 py-3">
                   <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -815,27 +814,18 @@ function CheckInsTab({
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-neon-dark/40 truncate">
-                      {g.email}
-                    </p>
+                    <p className="text-xs text-neon-dark/40 truncate">{g.email}</p>
                   </div>
                   {g.linkedin_url && (
-                    <a
-                      href={g.linkedin_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:underline shrink-0"
-                    >
+                    <a href={g.linkedin_url} target="_blank" rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline shrink-0">
                       LinkedIn
                     </a>
                   )}
                   {p && (
                     <span className="text-[10px] text-neon-dark/30 shrink-0 hidden sm:inline">
                       {new Date(p.created_at).toLocaleString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
+                        day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
                       })}
                     </span>
                   )}
@@ -846,31 +836,47 @@ function CheckInsTab({
         </div>
       )}
 
+      {/* Checked in but NOT registered */}
+      {checkedInNotRegistered.length > 0 && (
+        <div className="bg-white rounded-2xl border border-amber-200 overflow-hidden">
+          <div className="px-4 py-3 border-b border-amber-200 bg-amber-50/50">
+            <h3 className="text-sm font-semibold text-amber-800">
+              Checked In — Did Not Register ({checkedInNotRegistered.length})
+            </h3>
+          </div>
+          <div className="divide-y divide-neon-dark/5">
+            {checkedInNotRegistered.map((g) => (
+              <div key={g.email} className="flex items-center gap-3 px-4 py-2.5">
+                <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                <span className="text-sm text-neon-dark/70 truncate flex-1">{g.email}</span>
+                {g.linkedin_url && (
+                  <a href={g.linkedin_url} target="_blank" rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:underline shrink-0">
+                    LinkedIn
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Not checked in */}
       {notCheckedIn.length > 0 && (
         <div className="bg-white rounded-2xl border border-neon-dark/10 overflow-hidden">
           <div className="px-4 py-3 border-b border-neon-dark/10 bg-neon-dark/3">
             <h3 className="text-sm font-semibold text-neon-dark/50">
-              Not Registered ({notCheckedIn.length})
+              Not Checked In ({notCheckedIn.length})
             </h3>
           </div>
           <div className="divide-y divide-neon-dark/5">
             {notCheckedIn.map((g) => (
-              <div
-                key={g.email}
-                className="flex items-center gap-3 px-4 py-2.5 opacity-60"
-              >
+              <div key={g.email} className="flex items-center gap-3 px-4 py-2.5 opacity-50">
                 <span className="w-2 h-2 rounded-full bg-neon-dark/15 shrink-0" />
-                <span className="text-sm text-neon-dark/60 truncate flex-1">
-                  {g.email}
-                </span>
+                <span className="text-sm text-neon-dark/60 truncate flex-1">{g.email}</span>
                 {g.linkedin_url && (
-                  <a
-                    href={g.linkedin_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:underline shrink-0"
-                  >
+                  <a href={g.linkedin_url} target="_blank" rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:underline shrink-0">
                     LinkedIn
                   </a>
                 )}
