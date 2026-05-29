@@ -117,31 +117,35 @@ export default function AdminLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-neon-bg flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-neon-dark/30 border-t-neon-dark rounded-full animate-spin" />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="min-h-screen bg-neon-bg flex items-center justify-center px-4">
         <div className="w-full max-w-sm">
-          <div className="text-center mb-6">
+          <div className="text-center mb-8">
             <Image
               src="/neon-logo.png"
               alt="Neon Fund"
-              width={48}
-              height={48}
-              className="mx-auto mb-3"
+              width={44}
+              height={44}
+              className="mx-auto mb-4 rounded-xl"
             />
-            <h1 className="text-2xl font-bold text-neon-dark">Admin</h1>
-            <p className="text-sm text-neon-dark/50 mt-1">Neon Fund Dashboard</p>
+            <h1 className="text-2xl font-bold text-neon-dark tracking-tight">
+              Admin Dashboard
+            </h1>
+            <p className="text-sm text-neon-dark/40 mt-1.5">
+              Sign in to manage events
+            </p>
           </div>
-          <div className="bg-white rounded-2xl shadow-sm border border-neon-dark/10 p-6 space-y-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-neon-dark/8 p-6 space-y-4">
             <button
               onClick={handleGoogleLogin}
-              className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-white border border-neon-dark/15 rounded-xl text-sm font-medium text-neon-dark hover:bg-neon-bg transition-colors"
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white border border-neon-dark/12 rounded-xl text-sm font-medium text-neon-dark hover:bg-neon-bg/50 hover:border-neon-dark/20 transition-all active:scale-[0.99]"
             >
               <svg width="18" height="18" viewBox="0 0 48 48">
                 <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -151,11 +155,11 @@ export default function AdminLayout({
               </svg>
               Sign in with Google
             </button>
-            <p className="text-xs text-center text-neon-dark/40">
+            <p className="text-[11px] text-center text-neon-dark/30">
               Only @neon.fund accounts can access this dashboard
             </p>
             {error && (
-              <p className="text-sm text-red-600 text-center">{error}</p>
+              <p className="text-sm text-red-500 text-center">{error}</p>
             )}
           </div>
         </div>
@@ -165,14 +169,14 @@ export default function AdminLayout({
 
   return (
     <AdminContext.Provider value={user}>
-      <div className="min-h-screen">
-        <header className="bg-white border-b border-neon-dark/10 px-4 sm:px-6 py-3">
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Image src="/neon-logo.png" alt="Neon Fund" width={28} height={28} />
-              <span className="font-semibold text-neon-dark text-sm">Neon Fund</span>
-              <span className="text-neon-dark/30 mx-1">/</span>
-              <span className="text-neon-dark/60 text-sm">Admin</span>
+      <div className="min-h-screen bg-neon-bg">
+        <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-neon-dark/6">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <Image src="/neon-logo.png" alt="Neon Fund" width={26} height={26} className="rounded-md" />
+              <span className="font-semibold text-neon-dark text-sm tracking-tight">Neon Fund</span>
+              <span className="text-neon-dark/15 mx-0.5">/</span>
+              <span className="text-neon-dark/50 text-sm">Admin</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
@@ -180,30 +184,31 @@ export default function AdminLayout({
                   <img
                     src={user.avatar}
                     alt=""
-                    className="w-6 h-6 rounded-full"
+                    className="w-6 h-6 rounded-full ring-1 ring-neon-dark/10"
                   />
                 )}
-                <span className="text-xs text-neon-dark/60">{user.name}</span>
+                <span className="text-xs text-neon-dark/50 hidden sm:inline">{user.name}</span>
                 <span
                   className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                     user.role === "super_admin"
                       ? "bg-neon text-neon-dark"
-                      : "bg-neon-dark/5 text-neon-dark/50"
+                      : "bg-neon-dark/5 text-neon-dark/40"
                   }`}
                 >
                   {user.role === "super_admin" ? "Admin" : "Viewer"}
                 </span>
               </div>
+              <div className="w-px h-4 bg-neon-dark/8" />
               <button
                 onClick={handleSignOut}
-                className="text-xs text-neon-dark/40 hover:text-neon-dark/70 transition-colors"
+                className="text-xs text-neon-dark/35 hover:text-neon-dark/60 transition-colors"
               >
                 Sign out
               </button>
             </div>
           </div>
         </header>
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
           {children}
         </main>
       </div>
