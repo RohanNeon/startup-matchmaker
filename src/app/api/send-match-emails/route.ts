@@ -205,7 +205,7 @@ export async function POST(request: Request) {
       await transporter.sendMail({
         from: '"Neon Fund" <rohan@neon.fund>',
         to: profileEmail,
-        subject: `Your Top ${enrichedMatches.length} Matches | Neon Fund`,
+        subject: `Your MatchUp Results | Neon Fund`,
         html,
       });
       results.push({ email: profileEmail, status: "sent", matchCount: enrichedMatches.length });

@@ -172,7 +172,7 @@ export default function EventDashboard({
       const data = await res.json();
       if (res.ok) {
         setComputeResult(
-          `Computed ${data.totalMatches} matches for ${data.profileCount} profiles.`
+          `MatchUp complete — ${data.totalMatches} matches for ${data.profileCount} profiles.`
         );
         await loadEventData();
       } else {
@@ -249,7 +249,7 @@ export default function EventDashboard({
     if (!event) return;
 
     const confirmed = window.confirm(
-      `⚠️ BATCH SEND\n\nThis will send match emails to ALL ${participants.length} registered participants for "${event.name}".\n\nAre you absolutely sure?`
+      `⚠️ BATCH SEND\n\nThis will send MatchUp results to ALL ${participants.length} registered participants for "${event.name}".\n\nAre you absolutely sure?`
     );
     if (!confirmed) return;
 
@@ -381,7 +381,7 @@ export default function EventDashboard({
     { key: "participants", label: "Registered", count: participants.length },
     { key: "guests", label: "Guest List", count: guests.length },
     { key: "checkins", label: "Check-ins", count: checkedInCount },
-    { key: "matches", label: "Matches", count: matches.length },
+    { key: "matches", label: "MatchUp", count: matches.length },
     ...(isSuperAdmin
       ? [{ key: "emails" as Tab, label: "Email Controls", count: 0 }]
       : []),
@@ -450,7 +450,7 @@ export default function EventDashboard({
                 : "—"
             }
           />
-          <StatCard label="Matches" value={matches.length} />
+          <StatCard label="MatchUps" value={matches.length} />
           <StatCard label="Matched Users" value={uniqueMatchProfiles} />
         </div>
       </div>
@@ -910,7 +910,7 @@ function MatchesTab({
     return (
       <div className="bg-white rounded-2xl border border-neon-dark/10 p-8 text-center">
         <p className="text-neon-dark/40">
-          No matches computed yet. Go to Email Controls to compute matches.
+          No MatchUps computed yet. Go to Email Controls to run MatchUp.
         </p>
       </div>
     );
@@ -1114,7 +1114,7 @@ function EmailsTab({
 
   return (
     <div className="space-y-4">
-      {/* Step 1: Compute Matches */}
+      {/* Step 1: Run MatchUp */}
       <div className="bg-white rounded-2xl border border-neon-dark/10 p-5">
         <div className="flex items-center gap-2 mb-1">
           <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${
@@ -1123,17 +1123,17 @@ function EmailsTab({
             {matchesExist ? "✓" : "1"}
           </span>
           <h3 className="text-sm font-semibold text-neon-dark">
-            Compute Matches
+            Run MatchUp
           </h3>
         </div>
         {matchesExist ? (
           <p className="text-xs text-green-600 ml-8">
-            {matches.length} matches computed for {uniqueRecipients} participants
+            {matches.length} MatchUps computed for {uniqueRecipients} participants
           </p>
         ) : (
           <>
             <p className="text-xs text-neon-dark/40 mb-3 ml-8">
-              Run the matching algorithm on {participants.length} registered participants.
+              Run the MatchUp algorithm on {participants.length} registered participants.
             </p>
             <div className="ml-8 flex items-center gap-3">
               <button
@@ -1141,7 +1141,7 @@ function EmailsTab({
                 disabled={computing || participants.length < 2}
                 className="px-4 py-2 bg-neon-dark text-neon rounded-xl text-sm font-semibold hover:bg-neon-dark/90 transition-colors disabled:opacity-50"
               >
-                {computing ? "Computing..." : "Compute Matches"}
+                {computing ? "Computing..." : "Run MatchUp"}
               </button>
               {computeResult && (
                 <p className="text-sm text-neon-dark/60">{computeResult}</p>
@@ -1225,7 +1225,7 @@ function EmailsTab({
           </h3>
         </div>
         <p className="text-xs text-red-500/70 mb-3 ml-8">
-          This will send match emails to ALL registered participants. Two
+          This will send MatchUp results to ALL registered participants. Two
           confirmation dialogs will appear. This action cannot be undone.
         </p>
         <div className="ml-8 flex items-center gap-3">

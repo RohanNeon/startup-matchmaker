@@ -41,13 +41,13 @@ export default function WaitingScreen({ profile }: Props) {
           </div>
 
           <p className="text-neon-dark/80 text-sm sm:text-base leading-relaxed mb-4">
-            We&apos;ll send your best matches to{" "}
+            MatchUp is finding your best connections. We&apos;ll send your results to{" "}
             <span className="font-medium text-neon-dark">{profile.email}</span>{" "}
             before the networking session starts.
           </p>
 
           <p className="text-neon-dark/50 text-sm">
-            Sit tight, great connections are on the way!
+            Sit tight — MatchUp is working its magic!
           </p>
         </div>
       </div>

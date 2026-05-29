@@ -74,7 +74,7 @@ function buildEmailHtml(
   <div style="max-width: 520px; margin: 0 auto; padding: 40px 24px;">
     <div style="text-align: center; margin-bottom: 32px;">
       <img src="https://neon-matchmaker.vercel.app/neon-logo-email.png" alt="Neon Fund" width="48" height="48" style="margin-bottom: 12px; border-radius: 8px;" />
-      <h1 style="color: #1d3d0f; font-size: 22px; font-weight: 700; margin: 0;">Your Top Matches</h1>
+      <h1 style="color: #1d3d0f; font-size: 22px; font-weight: 700; margin: 0;">Your MatchUp Results</h1>
       <p style="color: #1d3d0f99; font-size: 14px; margin: 8px 0 0;">Neon Fund | ${eventName}</p>
     </div>
     <div style="background: #ffffff; border-radius: 16px; padding: 24px; border: 1px solid rgba(29,61,15,0.1);">
@@ -250,7 +250,7 @@ export async function POST(request: Request) {
       await transporter.sendMail({
         from: '"Neon Fund" <rohan@neon.fund>',
         to: profileEmail,
-        subject: `Your Top ${enrichedMatches.length} Matches | ${event.name}`,
+        subject: `Your MatchUp Results | ${event.name}`,
         html,
       });
       results.push({ email: profileEmail, status: "sent", matchCount: enrichedMatches.length });
