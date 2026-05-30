@@ -500,7 +500,7 @@ export default function AdminPage() {
                   {metrics?.repeatRegistrations ?? 0}
                 </span>
               </div>
-              <p className="text-xs text-[#1d3d0f]/40 mb-3">
+              <p className="text-xs text-[#1d3d0f]/60 mb-3">
                 People who registered for more than one event
               </p>
               {metrics && metrics.repeatEmails.length > 0 ? (
@@ -516,7 +516,7 @@ export default function AdminPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-[#1d3d0f]/25 italic">
+                <p className="text-xs text-[#1d3d0f]/50 italic">
                   No repeat attendees yet
                 </p>
               )}
@@ -555,7 +555,7 @@ export default function AdminPage() {
                   );
                 })}
                 {events.length === 0 && (
-                  <p className="text-xs text-[#1d3d0f]/25 italic">
+                  <p className="text-xs text-[#1d3d0f]/50 italic">
                     No events yet
                   </p>
                 )}
@@ -598,7 +598,7 @@ export default function AdminPage() {
             <form onSubmit={handleCreateEvent} className="p-5 space-y-5">
               {/* Luma import */}
               <div>
-                <label className="block text-[11px] font-semibold text-[#1d3d0f]/45 uppercase tracking-wider mb-2">
+                <label className="block text-[11px] font-semibold text-[#1d3d0f]/65 uppercase tracking-wider mb-2">
                   Import from Luma
                 </label>
                 <div className="flex gap-2">
@@ -607,7 +607,7 @@ export default function AdminPage() {
                     value={lumaUrl}
                     onChange={(e) => setLumaUrl(e.target.value)}
                     placeholder="https://lu.ma/your-event"
-                    className="flex-1 px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/20 focus:outline-none focus:border-[#1d3d0f]/25 transition-colors"
+                    className="flex-1 px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/60 focus:outline-none focus:border-[#1d3d0f]/35 transition-colors"
                   />
                   <button
                     type="button"
@@ -637,7 +637,7 @@ export default function AdminPage() {
                       <p className="text-sm font-semibold text-[#000000] truncate">
                         {newEvent.name}
                       </p>
-                      <p className="text-[11px] text-[#1d3d0f]/40">
+                      <p className="text-[11px] text-[#1d3d0f]/60">
                         Imported
                       </p>
                     </div>
@@ -650,7 +650,7 @@ export default function AdminPage() {
               {/* Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-medium text-[#1d3d0f]/45 mb-1">
+                  <label className="block text-[11px] font-medium text-[#1d3d0f]/65 mb-1">
                     Event name <span className="text-red-400">*</span>
                   </label>
                   <input
@@ -661,13 +661,13 @@ export default function AdminPage() {
                     }
                     placeholder="Cybersecurity AI"
                     required
-                    className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/20 focus:outline-none focus:border-[#1d3d0f]/25 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/60 focus:outline-none focus:border-[#1d3d0f]/35 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-[#1d3d0f]/45 mb-1">
+                  <label className="block text-[11px] font-medium text-[#1d3d0f]/65 mb-1">
                     Slug <span className="text-red-400">*</span>
-                    <span className="text-[#1d3d0f]/20 ml-1 font-normal">
+                    <span className="text-[#1d3d0f]/40 ml-1 font-normal">
                       /event/...
                     </span>
                   </label>
@@ -684,11 +684,11 @@ export default function AdminPage() {
                     }
                     placeholder="cybersecurity-ai"
                     required
-                    className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm font-mono bg-[#ffffff] placeholder:text-[#1d3d0f]/20 placeholder:font-sans focus:outline-none focus:border-[#1d3d0f]/25 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm font-mono bg-[#ffffff] placeholder:text-[#1d3d0f]/60 placeholder:font-sans focus:outline-none focus:border-[#1d3d0f]/35 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-[#1d3d0f]/45 mb-1">
+                  <label className="block text-[11px] font-medium text-[#1d3d0f]/65 mb-1">
                     Date
                   </label>
                   <input
@@ -697,11 +697,11 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setNewEvent({ ...newEvent, event_date: e.target.value })
                     }
-                    className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] focus:outline-none focus:border-[#1d3d0f]/25 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] focus:outline-none focus:border-[#1d3d0f]/35 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-[#1d3d0f]/45 mb-1">
+                  <label className="block text-[11px] font-medium text-[#1d3d0f]/65 mb-1">
                     Location
                   </label>
                   <input
@@ -711,12 +711,12 @@ export default function AdminPage() {
                       setNewEvent({ ...newEvent, location: e.target.value })
                     }
                     placeholder="Bangalore"
-                    className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/20 focus:outline-none focus:border-[#1d3d0f]/25 transition-colors"
+                    className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/60 focus:outline-none focus:border-[#1d3d0f]/35 transition-colors"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-[#1d3d0f]/45 mb-1">
+                <label className="block text-[11px] font-medium text-[#1d3d0f]/65 mb-1">
                   Description
                 </label>
                 <textarea
@@ -726,7 +726,7 @@ export default function AdminPage() {
                   }
                   placeholder="Brief event description..."
                   rows={2}
-                  className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/20 focus:outline-none focus:border-[#1d3d0f]/25 resize-none transition-colors"
+                  className="w-full px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/60 focus:outline-none focus:border-[#1d3d0f]/35 resize-none transition-colors"
                 />
               </div>
 
@@ -734,7 +734,7 @@ export default function AdminPage() {
 
               {/* File upload */}
               <div>
-                <label className="block text-[11px] font-semibold text-[#1d3d0f]/45 uppercase tracking-wider mb-2">
+                <label className="block text-[11px] font-semibold text-[#1d3d0f]/65 uppercase tracking-wider mb-2">
                   Guest List
                 </label>
 
@@ -771,7 +771,7 @@ export default function AdminPage() {
                     />
                     <div className="flex flex-col items-center gap-2">
                       <svg
-                        className="w-8 h-8 text-[#1d3d0f]/20"
+                        className="w-8 h-8 text-[#1d3d0f]/40"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -783,13 +783,13 @@ export default function AdminPage() {
                           d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
                         />
                       </svg>
-                      <p className="text-sm font-medium text-[#1d3d0f]/40">
+                      <p className="text-sm font-medium text-[#1d3d0f]/60">
                         Drop file here or{" "}
                         <span className="text-[#1d3d0f] underline">
                           browse
                         </span>
                       </p>
-                      <p className="text-[11px] text-[#1d3d0f]/25">
+                      <p className="text-[11px] text-[#1d3d0f]/50">
                         CSV, Excel, TSV — email column auto-detected
                       </p>
                     </div>
@@ -800,7 +800,7 @@ export default function AdminPage() {
                     {/* Header */}
                     <div className="px-4 py-2.5 bg-[#fdfff0] border-b border-[#1d3d0f]/6 flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0">
-                        <svg className="w-4 h-4 text-[#1d3d0f]/30 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <svg className="w-4 h-4 text-[#1d3d0f]/50 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                         </svg>
                         <span className="text-xs font-medium text-[#1d3d0f]/60 truncate">
@@ -816,7 +816,7 @@ export default function AdminPage() {
                           const input = document.getElementById("guest-file-input") as HTMLInputElement;
                           if (input) input.value = "";
                         }}
-                        className="text-[11px] text-[#1d3d0f]/35 hover:text-red-500 transition-colors flex-shrink-0 ml-2"
+                        className="text-[11px] text-[#1d3d0f]/55 hover:text-red-500 transition-colors flex-shrink-0 ml-2"
                       >
                         Remove
                       </button>
@@ -840,7 +840,7 @@ export default function AdminPage() {
                       </div>
 
                       {uploadedColumns.length > 0 && (
-                        <p className="text-[11px] text-[#1d3d0f]/30">
+                        <p className="text-[11px] text-[#1d3d0f]/50">
                           Columns found: {uploadedColumns.join(", ")} — extracted email{parsedGuests.some((g) => g.linkedin_url) ? " & LinkedIn" : ""}
                         </p>
                       )}
@@ -856,7 +856,7 @@ export default function AdminPage() {
                           </span>
                         ))}
                         {parsedGuests.length > 5 && (
-                          <span className="text-[11px] px-2 py-0.5 text-[#1d3d0f]/30">
+                          <span className="text-[11px] px-2 py-0.5 text-[#1d3d0f]/50">
                             +{parsedGuests.length - 5} more
                           </span>
                         )}
@@ -918,7 +918,7 @@ export default function AdminPage() {
 
         {events.length === 0 && (
           <div className="text-center py-16">
-            <p className="text-sm text-[#1d3d0f]/35">No events yet</p>
+            <p className="text-sm text-[#1d3d0f]/55">No events yet</p>
           </div>
         )}
       </section>
@@ -958,7 +958,7 @@ function MetricCard({
       }`}
     >
       <p className="text-2xl font-bold text-[#000000] leading-none">{value}</p>
-      <p className="text-[11px] text-[#1d3d0f]/40 mt-1.5">{label}</p>
+      <p className="text-[11px] text-[#1d3d0f]/60 mt-1.5">{label}</p>
     </div>
   );
 }
@@ -981,7 +981,7 @@ function MiniStat({
           value
         )}
       </p>
-      <p className="text-[10px] text-[#1d3d0f]/30 mt-0.5">{label}</p>
+      <p className="text-[10px] text-[#1d3d0f]/50 mt-0.5">{label}</p>
     </div>
   );
 }
@@ -1054,7 +1054,7 @@ function EventCalendar({ events }: { events: EventWithStats[] }) {
         <div className="flex items-center gap-0.5">
           <button
             onClick={prev}
-            className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-[#1d3d0f]/5 transition-colors text-[#1d3d0f]/40 hover:text-[#1d3d0f]"
+            className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-[#1d3d0f]/5 transition-colors text-[#1d3d0f]/60 hover:text-[#1d3d0f]"
           >
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -1062,7 +1062,7 @@ function EventCalendar({ events }: { events: EventWithStats[] }) {
           </button>
           <button
             onClick={next}
-            className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-[#1d3d0f]/5 transition-colors text-[#1d3d0f]/40 hover:text-[#1d3d0f]"
+            className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-[#1d3d0f]/5 transition-colors text-[#1d3d0f]/60 hover:text-[#1d3d0f]"
           >
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -1076,7 +1076,7 @@ function EventCalendar({ events }: { events: EventWithStats[] }) {
         {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
           <div
             key={`${d}-${i}`}
-            className="text-center text-[9px] font-semibold text-[#1d3d0f]/30 uppercase py-1"
+            className="text-center text-[9px] font-semibold text-[#1d3d0f]/50 uppercase py-1"
           >
             {d}
           </div>
@@ -1144,7 +1144,7 @@ function EventCalendar({ events }: { events: EventWithStats[] }) {
                 <span className="text-[11px] font-medium text-[#000000] group-hover:underline truncate block">
                   {ev.name}
                 </span>
-                <span className="text-[10px] text-[#1d3d0f]/35">
+                <span className="text-[10px] text-[#1d3d0f]/55">
                   {ev.event_date
                     ? new Date(ev.event_date).toLocaleDateString("en-IN", {
                         day: "numeric",
@@ -1166,7 +1166,7 @@ function EventCalendar({ events }: { events: EventWithStats[] }) {
       {/* All events link */}
       {events.length > 0 && monthEvents.length === 0 && (
         <div className="mt-3 pt-3 border-t border-[#1d3d0f]/6">
-          <p className="text-[10px] text-[#1d3d0f]/25 italic text-center">
+          <p className="text-[10px] text-[#1d3d0f]/50 italic text-center">
             No events this month
           </p>
         </div>
@@ -1192,7 +1192,7 @@ function EventCalendar({ events }: { events: EventWithStats[] }) {
                 <span className="text-[10px] text-[#000000] group-hover:underline truncate">
                   {ev.name}
                 </span>
-                <span className="text-[9px] text-[#1d3d0f]/35 flex-shrink-0">
+                <span className="text-[9px] text-[#1d3d0f]/55 flex-shrink-0">
                   {ev.event_date
                     ? new Date(ev.event_date).toLocaleDateString("en-IN", {
                         day: "numeric",
@@ -1261,7 +1261,7 @@ function EventCard({
                 <h3 className="text-[15px] font-bold text-[#000000] truncate group-hover:text-[#1d3d0f] transition-colors">
                   {event.name}
                 </h3>
-                <p className="text-xs text-[#1d3d0f]/40 mt-0.5">
+                <p className="text-xs text-[#1d3d0f]/60 mt-0.5">
                   {event.event_date
                     ? new Date(event.event_date).toLocaleDateString("en-IN", {
                         day: "numeric",
@@ -1271,7 +1271,7 @@ function EventCard({
                     : "Date TBD"}
                   {event.location && (
                     <>
-                      <span className="mx-1 text-[#1d3d0f]/15">|</span>
+                      <span className="mx-1 text-[#1d3d0f]/30">|</span>
                       {event.location}
                     </>
                   )}
@@ -1282,7 +1282,7 @@ function EventCard({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 text-[11px] text-[#1d3d0f]/30 hover:text-[#1d3d0f]/60 transition-colors mt-1"
+                    className="inline-flex items-center gap-1 text-[11px] text-[#1d3d0f]/50 hover:text-[#1d3d0f]/80 transition-colors mt-1"
                   >
                     <Image src="/luma-logo.png" alt="" width={11} height={11} />
                     View on Luma
@@ -1308,7 +1308,7 @@ function EventCard({
           {/* Arrow */}
           <div className="hidden sm:flex items-center flex-shrink-0">
             <svg
-              className="w-4 h-4 text-[#1d3d0f]/15 group-hover:text-[#1d3d0f]/40 transition-colors"
+              className="w-4 h-4 text-[#1d3d0f]/30 group-hover:text-[#1d3d0f]/60 transition-colors"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -1330,7 +1330,7 @@ function EventCard({
           <button
             onClick={() => onDelete(event.id, event.name)}
             disabled={isDeleting}
-            className="text-[11px] text-[#1d3d0f]/20 hover:text-red-500 transition-colors"
+            className="text-[11px] text-[#1d3d0f]/40 hover:text-red-500 transition-colors"
           >
             {isDeleting ? "Deleting..." : "Delete event"}
           </button>

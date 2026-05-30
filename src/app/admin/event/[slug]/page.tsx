@@ -457,7 +457,7 @@ export default function EventDashboard({
       {/* Back link */}
       <Link
         href="/admin"
-        className="text-sm text-neon-dark/40 hover:text-neon-dark transition-colors mb-4 inline-flex items-center gap-1.5"
+        className="text-sm text-neon-dark/55 hover:text-neon-dark transition-colors mb-4 inline-flex items-center gap-1.5"
       >
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -477,13 +477,13 @@ export default function EventDashboard({
                 <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold flex items-center gap-1.5 ${
                   event.is_active
                     ? "bg-[#e8ff79]/40 text-neon-dark"
-                    : "bg-neon-dark/5 text-neon-dark/35"
+                    : "bg-neon-dark/5 text-neon-dark/55"
                 }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${event.is_active ? "bg-neon-dark" : "bg-neon-dark/20"}`} />
                   {event.is_active ? "Active" : "Closed"}
                 </span>
               </div>
-              <p className="text-sm text-neon-dark/45 mt-1">
+              <p className="text-sm text-neon-dark/65 mt-1">
                 {event.event_date
                   ? new Date(event.event_date).toLocaleDateString("en-IN", {
                       day: "numeric",
@@ -494,7 +494,7 @@ export default function EventDashboard({
                 {event.location && ` · ${event.location}`}
               </p>
               <div className="flex items-center gap-3 mt-2">
-                <span className="text-xs text-neon-dark/20 font-mono">
+                <span className="text-xs text-neon-dark/40 font-mono">
                   /event/{event.slug}
                 </span>
                 {event.luma_url && (
@@ -502,7 +502,7 @@ export default function EventDashboard({
                     href={event.luma_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-neon-dark/30 hover:text-neon-dark/60 transition-colors"
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-neon-dark/50 hover:text-neon-dark/80 transition-colors"
                   >
                     Luma
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -518,13 +518,13 @@ export default function EventDashboard({
               <div className="flex items-center gap-1.5 flex-shrink-0 ml-4">
                 <button
                   onClick={handleToggleActive}
-                  className="text-[11px] px-3 py-1.5 rounded-lg font-medium transition-colors text-neon-dark/40 hover:text-neon-dark hover:bg-neon-dark/5 border border-neon-dark/10"
+                  className="text-[11px] px-3 py-1.5 rounded-lg font-medium transition-colors text-neon-dark/60 hover:text-neon-dark hover:bg-neon-dark/5 border border-neon-dark/10"
                 >
                   {event.is_active ? "Close Event" : "Reactivate"}
                 </button>
                 <button
                   onClick={handleDeleteEvent}
-                  className="p-1.5 rounded-lg text-neon-dark/15 hover:text-neon-dark/50 hover:bg-neon-dark/5 transition-colors"
+                  className="p-1.5 rounded-lg text-neon-dark/30 hover:text-neon-dark/70 hover:bg-neon-dark/5 transition-colors"
                   title="Delete event"
                 >
                   <IconTrash />
@@ -572,11 +572,11 @@ export default function EventDashboard({
                   flex-1 flex items-center justify-center gap-2 py-3.5 px-2 text-sm font-medium transition-all relative
                   ${isActive
                     ? "text-neon-dark"
-                    : "text-neon-dark/35 hover:text-neon-dark/60 hover:bg-neon-dark/[0.02]"
+                    : "text-neon-dark/55 hover:text-neon-dark/80 hover:bg-neon-dark/[0.02]"
                   }
                 `}
               >
-                <span className={`transition-colors ${isActive ? "text-neon-dark" : "text-neon-dark/25"}`}>
+                <span className={`transition-colors ${isActive ? "text-neon-dark" : "text-neon-dark/45"}`}>
                   {tab.icon}
                 </span>
                 <span className="hidden sm:inline">{tab.label}</span>
@@ -586,7 +586,7 @@ export default function EventDashboard({
                       text-[11px] font-semibold min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center
                       ${isActive
                         ? "bg-neon-dark text-white"
-                        : "bg-neon-dark/8 text-neon-dark/40"
+                        : "bg-neon-dark/8 text-neon-dark/60"
                       }
                     `}
                   >
@@ -757,7 +757,7 @@ function MetricCell({ label, value, highlight }: { label: string; value: number 
   return (
     <div className="px-4 py-3.5 text-center">
       <p className={`text-xl font-bold leading-tight ${highlight ? "text-neon-dark" : "text-neon-dark/80"}`}>{value}</p>
-      <p className="text-[10px] text-neon-dark/35 mt-0.5 uppercase tracking-wider font-medium">{label}</p>
+      <p className="text-[10px] text-neon-dark/55 mt-0.5 uppercase tracking-wider font-medium">{label}</p>
     </div>
   );
 }
@@ -783,22 +783,22 @@ function SearchBar({
   return (
     <div className="flex items-center gap-3 px-4 py-3 border-b border-neon-dark/8">
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <span className="text-neon-dark/30"><IconSearch /></span>
+        <span className="text-neon-dark/50"><IconSearch /></span>
         <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="flex-1 text-sm bg-transparent outline-none placeholder:text-neon-dark/25 text-neon-dark"
+          className="flex-1 text-sm bg-transparent outline-none placeholder:text-neon-dark/40 text-neon-dark"
         />
         {value && (
-          <button onClick={() => onChange("")} className="text-neon-dark/30 hover:text-neon-dark/60 text-xs">
+          <button onClick={() => onChange("")} className="text-neon-dark/50 hover:text-neon-dark/80 text-xs">
             Clear
           </button>
         )}
       </div>
       {count !== undefined && total !== undefined && value && (
-        <span className="text-xs text-neon-dark/35 flex-shrink-0">
+        <span className="text-xs text-neon-dark/55 flex-shrink-0">
           {count} of {total}
         </span>
       )}
@@ -829,9 +829,9 @@ function ParticipantsTab({ participants }: { participants: Participant[] }) {
   if (participants.length === 0) {
     return (
       <div className="p-12 text-center">
-        <div className="text-neon-dark/15 mb-3"><IconPerson /></div>
-        <p className="text-sm text-neon-dark/40">No registrations yet</p>
-        <p className="text-xs text-neon-dark/25 mt-1">People will appear here once they fill the event form</p>
+        <div className="text-neon-dark/30 mb-3"><IconPerson /></div>
+        <p className="text-sm text-neon-dark/60">No registrations yet</p>
+        <p className="text-xs text-neon-dark/45 mt-1">People will appear here once they fill the event form</p>
       </div>
     );
   }
@@ -850,13 +850,13 @@ function ParticipantsTab({ participants }: { participants: Participant[] }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neon-dark/8 bg-neon-bg/50">
-              <th className="text-left px-4 py-2.5 font-medium text-neon-dark/40 text-xs w-10">#</th>
-              <th className="text-left px-4 py-2.5 font-medium text-neon-dark/40 text-xs">Name</th>
-              <th className="text-left px-4 py-2.5 font-medium text-neon-dark/40 text-xs">Company</th>
-              <th className="text-left px-4 py-2.5 font-medium text-neon-dark/40 text-xs hidden md:table-cell">Role</th>
-              <th className="text-left px-4 py-2.5 font-medium text-neon-dark/40 text-xs hidden lg:table-cell">Looking For</th>
-              <th className="text-left px-4 py-2.5 font-medium text-neon-dark/40 text-xs hidden lg:table-cell">Can Offer</th>
-              <th className="text-left px-4 py-2.5 font-medium text-neon-dark/40 text-xs w-10"></th>
+              <th className="text-left px-4 py-2.5 font-medium text-neon-dark/60 text-xs w-10">#</th>
+              <th className="text-left px-4 py-2.5 font-medium text-neon-dark/60 text-xs">Name</th>
+              <th className="text-left px-4 py-2.5 font-medium text-neon-dark/60 text-xs">Company</th>
+              <th className="text-left px-4 py-2.5 font-medium text-neon-dark/60 text-xs hidden md:table-cell">Role</th>
+              <th className="text-left px-4 py-2.5 font-medium text-neon-dark/60 text-xs hidden lg:table-cell">Looking For</th>
+              <th className="text-left px-4 py-2.5 font-medium text-neon-dark/60 text-xs hidden lg:table-cell">Can Offer</th>
+              <th className="text-left px-4 py-2.5 font-medium text-neon-dark/60 text-xs w-10"></th>
             </tr>
           </thead>
           <tbody>
@@ -870,10 +870,10 @@ function ParticipantsTab({ participants }: { participants: Participant[] }) {
                       onClick={() => setExpandedEmail(isExpanded ? null : p.email)}
                       className="w-full flex items-center text-left hover:bg-neon-bg/40 transition-colors"
                     >
-                      <span className="px-4 py-3 text-neon-dark/30 text-xs w-10 flex-shrink-0">{i + 1}</span>
+                      <span className="px-4 py-3 text-neon-dark/50 text-xs w-10 flex-shrink-0">{i + 1}</span>
                       <span className="px-4 py-3 flex-1 min-w-0">
                         <span className="font-medium text-neon-dark block truncate">{p.name}</span>
-                        <span className="text-xs text-neon-dark/35 block truncate md:hidden">{p.role} at {p.company}</span>
+                        <span className="text-xs text-neon-dark/55 block truncate md:hidden">{p.role} at {p.company}</span>
                       </span>
                       <span className="px-4 py-3 text-neon-dark/60 hidden sm:block w-36 truncate flex-shrink-0">{p.company}</span>
                       <span className="px-4 py-3 text-neon-dark/60 hidden md:block w-32 truncate flex-shrink-0">{p.role}</span>
@@ -887,7 +887,7 @@ function ParticipantsTab({ participants }: { participants: Participant[] }) {
                           <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-neon-dark/8 text-neon-dark/60">{tag}</span>
                         ))}
                       </span>
-                      <span className="px-4 py-3 w-10 flex-shrink-0 text-neon-dark/25">
+                      <span className="px-4 py-3 w-10 flex-shrink-0 text-neon-dark/45">
                         <IconChevron open={isExpanded} />
                       </span>
                     </button>
@@ -897,15 +897,15 @@ function ParticipantsTab({ participants }: { participants: Participant[] }) {
                       <div className="bg-neon-bg/40 border-t border-neon-dark/5 px-6 py-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                           <div>
-                            <label className="text-[10px] font-semibold text-neon-dark/35 uppercase tracking-wider">Email</label>
+                            <label className="text-[10px] font-semibold text-neon-dark/55 uppercase tracking-wider">Email</label>
                             <p className="text-neon-dark/70 mt-0.5 text-xs break-all">{p.email}</p>
                           </div>
                           <div>
-                            <label className="text-[10px] font-semibold text-neon-dark/35 uppercase tracking-wider">Role</label>
+                            <label className="text-[10px] font-semibold text-neon-dark/55 uppercase tracking-wider">Role</label>
                             <p className="text-neon-dark/70 mt-0.5">{p.role} at {p.company}</p>
                           </div>
                           <div>
-                            <label className="text-[10px] font-semibold text-neon-dark/35 uppercase tracking-wider">Looking For</label>
+                            <label className="text-[10px] font-semibold text-neon-dark/55 uppercase tracking-wider">Looking For</label>
                             <div className="flex flex-wrap gap-1 mt-1">
                               {p.looking_for.map((tag) => (
                                 <span key={tag} className="text-[11px] px-2 py-0.5 rounded-full bg-white text-neon-dark/70 border border-neon-dark/10">{tag}</span>
@@ -913,7 +913,7 @@ function ParticipantsTab({ participants }: { participants: Participant[] }) {
                             </div>
                           </div>
                           <div>
-                            <label className="text-[10px] font-semibold text-neon-dark/35 uppercase tracking-wider">Can Offer</label>
+                            <label className="text-[10px] font-semibold text-neon-dark/55 uppercase tracking-wider">Can Offer</label>
                             <div className="flex flex-wrap gap-1 mt-1">
                               {p.can_offer.map((tag) => (
                                 <span key={tag} className="text-[11px] px-2 py-0.5 rounded-full bg-white text-neon-dark/70 border border-neon-dark/10">{tag}</span>
@@ -923,11 +923,11 @@ function ParticipantsTab({ participants }: { participants: Participant[] }) {
                         </div>
                         {p.what_building && (
                           <div className="mt-3 pt-3 border-t border-neon-dark/5">
-                            <label className="text-[10px] font-semibold text-neon-dark/35 uppercase tracking-wider">What they&apos;re building</label>
+                            <label className="text-[10px] font-semibold text-neon-dark/55 uppercase tracking-wider">What they&apos;re building</label>
                             <p className="text-sm text-neon-dark/70 mt-1 leading-relaxed">{p.what_building}</p>
                           </div>
                         )}
-                        <p className="text-[10px] text-neon-dark/25 mt-3">
+                        <p className="text-[10px] text-neon-dark/45 mt-3">
                           Registered {new Date(p.created_at).toLocaleString("en-IN", {
                             day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
                           })}
@@ -947,7 +947,7 @@ function ParticipantsTab({ participants }: { participants: Participant[] }) {
 
       {filtered.length === 0 && search && (
         <div className="p-8 text-center">
-          <p className="text-sm text-neon-dark/40">No results for &ldquo;{search}&rdquo;</p>
+          <p className="text-sm text-neon-dark/60">No results for &ldquo;{search}&rdquo;</p>
         </div>
       )}
     </div>
@@ -1077,23 +1077,23 @@ function GuestsTab({
       {/* Toolbar: search + actions */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-neon-dark/8">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <span className="text-neon-dark/30"><IconSearch /></span>
+          <span className="text-neon-dark/50"><IconSearch /></span>
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search guests..."
-            className="flex-1 text-sm bg-transparent outline-none placeholder:text-neon-dark/25 text-neon-dark"
+            className="flex-1 text-sm bg-transparent outline-none placeholder:text-neon-dark/40 text-neon-dark"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="text-neon-dark/30 hover:text-neon-dark/60 text-xs">
+            <button onClick={() => setSearch("")} className="text-neon-dark/50 hover:text-neon-dark/80 text-xs">
               Clear
             </button>
           )}
         </div>
 
         {/* Status summary */}
-        <span className="text-xs text-neon-dark/35 hidden sm:inline flex-shrink-0">
+        <span className="text-xs text-neon-dark/55 hidden sm:inline flex-shrink-0">
           {registeredCount} of {guests.length} registered
         </span>
 
@@ -1147,11 +1147,11 @@ function GuestsTab({
               className="hidden"
               onChange={handleFileChange}
             />
-            <div className="text-neon-dark/25 flex justify-center mb-2"><IconUpload /></div>
+            <div className="text-neon-dark/45 flex justify-center mb-2"><IconUpload /></div>
             <p className="text-sm text-neon-dark/50 font-medium">
               {uploading ? "Uploading..." : "Drop a CSV or Excel file here"}
             </p>
-            <p className="text-xs text-neon-dark/30 mt-1">
+            <p className="text-xs text-neon-dark/50 mt-1">
               or click to browse · columns: email, linkedin_url
             </p>
           </div>
@@ -1195,21 +1195,21 @@ function GuestsTab({
       {/* Guest list table */}
       {guests.length === 0 ? (
         <div className="p-12 text-center">
-          <div className="text-neon-dark/15 flex justify-center mb-3"><IconList /></div>
-          <p className="text-sm text-neon-dark/40">No guests added yet</p>
-          <p className="text-xs text-neon-dark/25 mt-1">Upload a CSV or Excel file, or add guests one by one</p>
+          <div className="text-neon-dark/30 flex justify-center mb-3"><IconList /></div>
+          <p className="text-sm text-neon-dark/60">No guests added yet</p>
+          <p className="text-xs text-neon-dark/45 mt-1">Upload a CSV or Excel file, or add guests one by one</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-neon-dark/8 bg-neon-bg/50">
-                <th className="text-left px-4 py-2.5 font-medium text-neon-dark/40 text-xs w-10">#</th>
-                <th className="text-left px-4 py-2.5 font-medium text-neon-dark/40 text-xs">Email</th>
-                <th className="text-left px-4 py-2.5 font-medium text-neon-dark/40 text-xs hidden sm:table-cell">LinkedIn</th>
-                <th className="text-center px-4 py-2.5 font-medium text-neon-dark/40 text-xs w-24">Status</th>
+                <th className="text-left px-4 py-2.5 font-medium text-neon-dark/60 text-xs w-10">#</th>
+                <th className="text-left px-4 py-2.5 font-medium text-neon-dark/60 text-xs">Email</th>
+                <th className="text-left px-4 py-2.5 font-medium text-neon-dark/60 text-xs hidden sm:table-cell">LinkedIn</th>
+                <th className="text-center px-4 py-2.5 font-medium text-neon-dark/60 text-xs w-24">Status</th>
                 {isSuperAdmin && (
-                  <th className="text-center px-4 py-2.5 font-medium text-neon-dark/40 text-xs w-12"></th>
+                  <th className="text-center px-4 py-2.5 font-medium text-neon-dark/60 text-xs w-12"></th>
                 )}
               </tr>
             </thead>
@@ -1218,7 +1218,7 @@ function GuestsTab({
                 const isRegistered = registeredEmails.has(g.email.toLowerCase());
                 return (
                   <tr key={g.email} className="border-b border-neon-dark/5 hover:bg-neon-bg/30 transition-colors group">
-                    <td className="px-4 py-2.5 text-neon-dark/30 text-xs">{i + 1}</td>
+                    <td className="px-4 py-2.5 text-neon-dark/50 text-xs">{i + 1}</td>
                     <td className="px-4 py-2.5 text-neon-dark/70 font-mono text-xs">{g.email}</td>
                     <td className="px-4 py-2.5 hidden sm:table-cell">
                       {g.linkedin_url ? (
@@ -1226,12 +1226,12 @@ function GuestsTab({
                           href={g.linkedin_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-neon-dark/40 hover:text-neon-dark text-xs underline decoration-neon-dark/20"
+                          className="text-neon-dark/60 hover:text-neon-dark text-xs underline decoration-neon-dark/35"
                         >
                           View profile
                         </a>
                       ) : (
-                        <span className="text-neon-dark/20 text-xs">—</span>
+                        <span className="text-neon-dark/40 text-xs">—</span>
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-center">
@@ -1241,7 +1241,7 @@ function GuestsTab({
                           Registered
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-neon-dark/[0.03] text-neon-dark/25">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-neon-dark/[0.03] text-neon-dark/45">
                           <span className="w-1.5 h-1.5 rounded-full bg-neon-dark/15" />
                           Pending
                         </span>
@@ -1251,7 +1251,7 @@ function GuestsTab({
                       <td className="px-4 py-2.5 text-center">
                         <button
                           onClick={() => handleDeleteGuest(g.email)}
-                          className="text-neon-dark/0 group-hover:text-neon-dark/25 hover:!text-red-500 transition-colors p-1"
+                          className="text-neon-dark/0 group-hover:text-neon-dark/40 hover:!text-red-500 transition-colors p-1"
                           title="Remove guest"
                         >
                           <IconTrash />
@@ -1268,7 +1268,7 @@ function GuestsTab({
 
       {filtered.length === 0 && search && guests.length > 0 && (
         <div className="p-8 text-center">
-          <p className="text-sm text-neon-dark/40">No guests match &ldquo;{search}&rdquo;</p>
+          <p className="text-sm text-neon-dark/60">No guests match &ldquo;{search}&rdquo;</p>
         </div>
       )}
     </div>
@@ -1305,9 +1305,9 @@ function CheckInsTab({
   if (totalCheckedIn === 0 && notCheckedIn.length === guests.length) {
     return (
       <div className="p-12 text-center">
-        <div className="text-neon-dark/15 flex justify-center mb-3"><IconCheckCircle /></div>
-        <p className="text-sm text-neon-dark/40">No check-ins recorded yet</p>
-        <p className="text-xs text-neon-dark/25 mt-1">Check-in status will update as guests arrive at the venue</p>
+        <div className="text-neon-dark/30 flex justify-center mb-3"><IconCheckCircle /></div>
+        <p className="text-sm text-neon-dark/60">No check-ins recorded yet</p>
+        <p className="text-xs text-neon-dark/45 mt-1">Check-in status will update as guests arrive at the venue</p>
       </div>
     );
   }
@@ -1334,7 +1334,7 @@ function CheckInsTab({
             <span className="font-semibold">{notCheckedIn.length}</span> not checked in
           </span>
         </div>
-        <span className="ml-auto text-xs text-neon-dark/30">
+        <span className="ml-auto text-xs text-neon-dark/50">
           {totalCheckedIn} / {guests.length} attended
         </span>
       </div>
@@ -1343,7 +1343,7 @@ function CheckInsTab({
       {checkedInAndRegistered.length > 0 && (
         <div>
           <div className="px-4 py-2 bg-neon-bg/40 border-b border-neon-dark/5">
-            <h4 className="text-[11px] font-semibold text-neon-dark/40 uppercase tracking-wider">
+            <h4 className="text-[11px] font-semibold text-neon-dark/60 uppercase tracking-wider">
               Checked In + Registered ({checkedInAndRegistered.length})
             </h4>
           </div>
@@ -1355,12 +1355,12 @@ function CheckInsTab({
                   <span className="w-2 h-2 rounded-full bg-neon-dark/60 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <span className="text-sm font-medium text-neon-dark truncate block">{p?.name || g.email}</span>
-                    {p && <span className="text-xs text-neon-dark/35 truncate block">{p.role} at {p.company}</span>}
+                    {p && <span className="text-xs text-neon-dark/55 truncate block">{p.role} at {p.company}</span>}
                   </div>
-                  <span className="text-xs text-neon-dark/35 truncate hidden sm:block">{g.email}</span>
+                  <span className="text-xs text-neon-dark/55 truncate hidden sm:block">{g.email}</span>
                   {g.linkedin_url && (
                     <a href={g.linkedin_url} target="_blank" rel="noopener noreferrer"
-                      className="text-xs text-neon-dark/35 hover:text-neon-dark shrink-0 underline decoration-neon-dark/15">
+                      className="text-xs text-neon-dark/55 hover:text-neon-dark shrink-0 underline decoration-neon-dark/30">
                       LinkedIn
                     </a>
                   )}
@@ -1375,7 +1375,7 @@ function CheckInsTab({
       {checkedInNotRegistered.length > 0 && (
         <div>
           <div className="px-4 py-2 bg-neon-bg/40 border-b border-neon-dark/5 border-t border-t-neon-dark/8">
-            <h4 className="text-[11px] font-semibold text-neon-dark/40 uppercase tracking-wider">
+            <h4 className="text-[11px] font-semibold text-neon-dark/60 uppercase tracking-wider">
               Checked In — Did Not Register ({checkedInNotRegistered.length})
             </h4>
           </div>
@@ -1394,7 +1394,7 @@ function CheckInsTab({
       {notCheckedIn.length > 0 && (
         <div>
           <div className="px-4 py-2 bg-neon-bg/40 border-b border-neon-dark/5 border-t border-t-neon-dark/8">
-            <h4 className="text-[11px] font-semibold text-neon-dark/40 uppercase tracking-wider">
+            <h4 className="text-[11px] font-semibold text-neon-dark/60 uppercase tracking-wider">
               Not Checked In ({notCheckedIn.length})
             </h4>
           </div>
@@ -1430,9 +1430,9 @@ function MatchesTab({
   if (matches.length === 0) {
     return (
       <div className="p-12 text-center">
-        <div className="text-neon-dark/15 flex justify-center mb-3"><IconLink /></div>
-        <p className="text-sm text-neon-dark/40">No MatchUps computed yet</p>
-        <p className="text-xs text-neon-dark/25 mt-1">Go to Email Controls tab to run the MatchUp algorithm</p>
+        <div className="text-neon-dark/30 flex justify-center mb-3"><IconLink /></div>
+        <p className="text-sm text-neon-dark/60">No MatchUps computed yet</p>
+        <p className="text-xs text-neon-dark/45 mt-1">Go to Email Controls tab to run the MatchUp algorithm</p>
       </div>
     );
   }
@@ -1475,7 +1475,7 @@ function MatchesTab({
 
       {/* Summary */}
       <div className="px-4 py-3 border-b border-neon-dark/8 bg-neon-bg/30 flex items-center justify-between">
-        <span className="text-xs text-neon-dark/40">
+        <span className="text-xs text-neon-dark/60">
           {grouped.size} people matched · {matches.length} total connections
         </span>
       </div>
@@ -1500,21 +1500,21 @@ function MatchesTab({
                     <span className="font-medium text-sm text-neon-dark truncate">
                       {person?.name || profileEmail}
                     </span>
-                    <span className="text-[11px] text-neon-dark/30 shrink-0">
+                    <span className="text-[11px] text-neon-dark/50 shrink-0">
                       {profileMatches.length} matches
                     </span>
                   </div>
                   {person && (
-                    <p className="text-xs text-neon-dark/40 truncate">
+                    <p className="text-xs text-neon-dark/60 truncate">
                       {person.role} at {person.company}
                     </p>
                   )}
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {person?.looking_for?.slice(0, 2).map((tag) => (
-                    <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-neon-dark/5 text-neon-dark/40 hidden sm:inline">{tag}</span>
+                    <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-neon-dark/5 text-neon-dark/60 hidden sm:inline">{tag}</span>
                   ))}
-                  <span className="text-neon-dark/20 ml-1"><IconChevron open={isExpanded} /></span>
+                  <span className="text-neon-dark/40 ml-1"><IconChevron open={isExpanded} /></span>
                 </div>
               </button>
 
@@ -1536,12 +1536,12 @@ function MatchesTab({
                               <span className="text-sm font-medium text-neon-dark truncate">
                                 {matchPerson?.name || m.match_email}
                               </span>
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-neon-dark/5 text-neon-dark/40 font-mono shrink-0">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-neon-dark/5 text-neon-dark/60 font-mono shrink-0">
                                 {m.score} pts
                               </span>
                             </div>
                             {matchPerson && (
-                              <p className="text-xs text-neon-dark/40 truncate">
+                              <p className="text-xs text-neon-dark/60 truncate">
                                 {matchPerson.role} at {matchPerson.company}
                               </p>
                             )}
@@ -1555,7 +1555,7 @@ function MatchesTab({
                           </div>
                           {m.linkedin_url && (
                             <a href={m.linkedin_url} target="_blank" rel="noopener noreferrer"
-                              className="text-xs text-neon-dark/35 hover:text-neon-dark shrink-0 underline decoration-neon-dark/15">
+                              className="text-xs text-neon-dark/55 hover:text-neon-dark shrink-0 underline decoration-neon-dark/30">
                               LinkedIn
                             </a>
                           )}
@@ -1572,7 +1572,7 @@ function MatchesTab({
 
       {uniqueProfiles.length === 0 && search && (
         <div className="p-8 text-center">
-          <p className="text-sm text-neon-dark/40">No results for &ldquo;{search}&rdquo;</p>
+          <p className="text-sm text-neon-dark/60">No results for &ldquo;{search}&rdquo;</p>
         </div>
       )}
     </div>
@@ -1637,12 +1637,12 @@ function EmailsTab({
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-neon-dark">Run MatchUp</h3>
             {matchesExist ? (
-              <p className="text-xs text-neon-dark/40 mt-0.5">
+              <p className="text-xs text-neon-dark/60 mt-0.5">
                 {matches.length} MatchUps computed for {uniqueRecipients} participants
               </p>
             ) : (
               <>
-                <p className="text-xs text-neon-dark/40 mt-0.5 mb-3">
+                <p className="text-xs text-neon-dark/60 mt-0.5 mb-3">
                   Run the MatchUp algorithm on {participants.length} registered participants.
                 </p>
                 <div className="flex items-center gap-3">
@@ -1669,7 +1669,7 @@ function EmailsTab({
           <span className="w-7 h-7 flex items-center justify-center bg-neon-dark text-white rounded-full text-xs font-bold shrink-0 mt-0.5">2</span>
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-neon-dark">Preview Recipients</h3>
-            <p className="text-xs text-neon-dark/40 mt-0.5 mb-3">
+            <p className="text-xs text-neon-dark/60 mt-0.5 mb-3">
               See who will receive emails and how many matches each person has. No emails are sent.
             </p>
             <button
@@ -1694,7 +1694,7 @@ function EmailsTab({
           <span className="w-7 h-7 flex items-center justify-center bg-neon-dark text-white rounded-full text-xs font-bold shrink-0 mt-0.5">3</span>
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-neon-dark">Send Test Email</h3>
-            <p className="text-xs text-neon-dark/40 mt-0.5 mb-3">
+            <p className="text-xs text-neon-dark/60 mt-0.5 mb-3">
               Send a real email to ONE person to verify it looks right on mobile and desktop.
             </p>
             <div className="flex items-center gap-2">
@@ -1726,7 +1726,7 @@ function EmailsTab({
           <span className="w-7 h-7 flex items-center justify-center bg-neon-dark text-white rounded-full text-xs font-bold shrink-0 mt-0.5">4</span>
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-neon-dark">Send to All Participants</h3>
-            <p className="text-xs text-neon-dark/40 mt-0.5 mb-3">
+            <p className="text-xs text-neon-dark/60 mt-0.5 mb-3">
               This will send MatchUp results to ALL registered participants. Two confirmation dialogs will appear.
             </p>
             <div className="flex items-center gap-3">
@@ -1779,7 +1779,7 @@ function DemandSupplyChart({ participants }: { participants: Participant[] }) {
 
   return (
     <div className="bg-white rounded-xl border border-neon-dark/8 p-5">
-      <h3 className="text-[11px] font-semibold text-neon-dark/45 uppercase tracking-wider mb-1">
+      <h3 className="text-[11px] font-semibold text-neon-dark/65 uppercase tracking-wider mb-1">
         Demand vs Supply
       </h3>
       <div className="flex items-center gap-4 mb-4">
@@ -1845,7 +1845,7 @@ function RoleBreakdown({ participants }: { participants: Participant[] }) {
 
   return (
     <div className="bg-white rounded-xl border border-neon-dark/8 p-5">
-      <h3 className="text-[11px] font-semibold text-neon-dark/45 uppercase tracking-wider mb-4">
+      <h3 className="text-[11px] font-semibold text-neon-dark/65 uppercase tracking-wider mb-4">
         Roles
       </h3>
       <div className="space-y-3">
@@ -1857,8 +1857,8 @@ function RoleBreakdown({ participants }: { participants: Participant[] }) {
               <div className="flex-1 h-3 bg-neon-dark/5 rounded overflow-hidden">
                 <div className="h-full bg-neon-dark rounded" style={{ width: `${(count / maxCount) * 100}%` }} />
               </div>
-              <span className="text-xs text-neon-dark/40 flex-shrink-0 w-14 text-right">
-                {count} <span className="text-neon-dark/25">({pct}%)</span>
+              <span className="text-xs text-neon-dark/60 flex-shrink-0 w-14 text-right">
+                {count} <span className="text-neon-dark/45">({pct}%)</span>
               </span>
             </div>
           );

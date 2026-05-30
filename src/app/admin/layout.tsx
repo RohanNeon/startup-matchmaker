@@ -171,7 +171,7 @@ export default function AdminLayout({
               </svg>
               Sign in with Google
             </button>
-            <p className="text-[11px] text-center text-[#1d3d0f]/35">
+            <p className="text-[11px] text-center text-[#1d3d0f]/50">
               Only @neon.fund accounts can access this dashboard
             </p>
             {error && (

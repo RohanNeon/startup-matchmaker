@@ -202,7 +202,7 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-bold text-[#000000] tracking-tight mb-1">
         Settings
       </h1>
-      <p className="text-sm text-[#1d3d0f]/40 mb-8">
+      <p className="text-sm text-[#1d3d0f]/60 mb-8">
         Manage who has admin access to the Event Dashboard
       </p>
 
@@ -239,7 +239,7 @@ export default function SettingsPage() {
                     <p className="text-sm font-medium text-[#000000] truncate">
                       {admin.email}
                     </p>
-                    <p className="text-[10px] text-[#1d3d0f]/30">
+                    <p className="text-[10px] text-[#1d3d0f]/50">
                       {admin.isCore
                         ? "Core admin"
                         : admin.added_by
@@ -254,13 +254,13 @@ export default function SettingsPage() {
                 </div>
 
                 {admin.isCore ? (
-                  <span className="text-[9px] px-2 py-0.5 rounded-md bg-[#1d3d0f]/6 text-[#1d3d0f]/35 font-medium flex-shrink-0">
+                  <span className="text-[9px] px-2 py-0.5 rounded-md bg-[#1d3d0f]/6 text-[#1d3d0f]/55 font-medium flex-shrink-0">
                     Core
                   </span>
                 ) : (
                   <button
                     onClick={() => handleRemoveAdmin(admin.email)}
-                    className="text-[11px] text-[#1d3d0f]/20 hover:text-red-500 transition-colors font-medium flex-shrink-0"
+                    className="text-[11px] text-[#1d3d0f]/40 hover:text-red-500 transition-colors font-medium flex-shrink-0"
                   >
                     Remove
                   </button>
@@ -304,7 +304,7 @@ export default function SettingsPage() {
                   }}
                   placeholder="name@neon.fund"
                   disabled={otpStep === "sending"}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/20 focus:outline-none focus:border-[#1d3d0f]/30 transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/60 focus:outline-none focus:border-[#1d3d0f]/30 transition-colors disabled:opacity-50"
                 />
                 <button
                   onClick={handleSendOtp}
@@ -331,12 +331,12 @@ export default function SettingsPage() {
                 </p>
                 <button
                   onClick={resetAddFlow}
-                  className="text-[11px] text-[#1d3d0f]/30 hover:text-[#1d3d0f] transition-colors"
+                  className="text-[11px] text-[#1d3d0f]/50 hover:text-[#1d3d0f] transition-colors"
                 >
                   Cancel
                 </button>
               </div>
-              <p className="text-xs text-[#1d3d0f]/30 mb-5">
+              <p className="text-xs text-[#1d3d0f]/50 mb-5">
                 Ask them to check their email and share the 6-digit code
               </p>
 
@@ -377,7 +377,7 @@ export default function SettingsPage() {
               <button
                 onClick={handleSendOtp}
                 disabled={otpStep === "verifying"}
-                className="w-full mt-2 py-2 text-[11px] text-[#1d3d0f]/30 hover:text-[#1d3d0f]/60 transition-colors"
+                className="w-full mt-2 py-2 text-[11px] text-[#1d3d0f]/50 hover:text-[#1d3d0f]/80 transition-colors"
               >
                 Resend code
               </button>
@@ -409,7 +409,7 @@ export default function SettingsPage() {
                 "Manage team access",
               ].map((item) => (
                 <li key={item} className="text-xs text-[#1d3d0f]/50 flex items-center gap-2">
-                  <svg className="w-3 h-3 text-[#1d3d0f]/25 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <svg className="w-3 h-3 text-[#1d3d0f]/45 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                   {item}
@@ -418,7 +418,7 @@ export default function SettingsPage() {
             </ul>
           </div>
           <div className="bg-[#ffffff] rounded-2xl border border-[#1d3d0f]/8 p-5">
-            <span className="inline-block text-[10px] px-2.5 py-1 rounded-lg font-bold bg-[#1d3d0f]/6 text-[#1d3d0f]/35 mb-3">
+            <span className="inline-block text-[10px] px-2.5 py-1 rounded-lg font-bold bg-[#1d3d0f]/6 text-[#1d3d0f]/55 mb-3">
               Viewer
             </span>
             <ul className="space-y-2">
@@ -430,7 +430,7 @@ export default function SettingsPage() {
                 "Read-only access",
               ].map((item) => (
                 <li key={item} className="text-xs text-[#1d3d0f]/50 flex items-center gap-2">
-                  <svg className="w-3 h-3 text-[#1d3d0f]/15 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <svg className="w-3 h-3 text-[#1d3d0f]/30 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                   {item}
@@ -439,7 +439,7 @@ export default function SettingsPage() {
             </ul>
           </div>
         </div>
-        <p className="text-[11px] text-[#1d3d0f]/20 mt-3">
+        <p className="text-[11px] text-[#1d3d0f]/40 mt-3">
           Any @neon.fund Google account can sign in as a viewer. Only admins can modify data.
         </p>
       </section>
