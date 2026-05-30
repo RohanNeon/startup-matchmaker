@@ -162,18 +162,11 @@ export default function AdminPage() {
   const [uploadedFileName, setUploadedFileName] = useState("");
   const [uploadedColumns, setUploadedColumns] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
-  const [deleting, setDeleting] = useState<string | null>(null); // eventId being deleted
-
-  // Admin management
-  const [admins, setAdmins] = useState<{ email: string; added_by: string | null; created_at: string }[]>([]);
-  const [newAdminEmail, setNewAdminEmail] = useState("");
-  const [addingAdmin, setAddingAdmin] = useState(false);
-  const [adminError, setAdminError] = useState("");
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     loadAll();
-    if (isSuperAdmin) loadAdmins();
-  }, [isSuperAdmin]);
+  }, []);
 
   async function loadAll() {
     await Promise.all([loadEvents(), loadMetrics()]);
@@ -341,57 +334,6 @@ export default function AdminPage() {
       alert(`Failed to delete: ${data.error}`);
     }
     setDeleting(null);
-  }
-
-  async function loadAdmins() {
-    const headers = await getAuthHeaders();
-    const res = await fetch("/api/admins", { headers });
-    if (res.ok) {
-      const data = await res.json();
-      setAdmins(data.admins || []);
-    }
-  }
-
-  async function handleAddAdmin(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newAdminEmail.trim()) return;
-    setAddingAdmin(true);
-    setAdminError("");
-
-    const headers = await getAuthHeaders();
-    const res = await fetch("/api/admins", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ email: newAdminEmail.trim() }),
-    });
-
-    const data = await res.json();
-    if (res.ok) {
-      setNewAdminEmail("");
-      await loadAdmins();
-    } else {
-      setAdminError(data.error || "Failed to add admin");
-    }
-    setAddingAdmin(false);
-  }
-
-  async function handleRemoveAdmin(email: string) {
-    const confirmed = window.confirm(`Remove ${email} as admin?`);
-    if (!confirmed) return;
-
-    const headers = await getAuthHeaders();
-    const res = await fetch("/api/admins", {
-      method: "DELETE",
-      headers,
-      body: JSON.stringify({ email }),
-    });
-
-    if (res.ok) {
-      await loadAdmins();
-    } else {
-      const data = await res.json();
-      alert(data.error || "Failed to remove admin");
-    }
   }
 
   async function handleFetchLuma() {
@@ -978,109 +920,6 @@ export default function AdminPage() {
         )}
       </section>
 
-        {/* ── Admin Management ── */}
-        {isSuperAdmin && (
-          <section>
-            <h2 className="text-lg font-bold text-[#000000] tracking-tight mb-4">
-              Admin Management
-            </h2>
-            <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-5">
-              {/* Hardcoded admins */}
-              <div className="mb-4">
-                <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
-                  Core Admins
-                </h3>
-                <div className="space-y-2">
-                  {["rohan@neon.fund", "nansi@neon.fund"].map((email) => (
-                    <div
-                      key={email}
-                      className="flex items-center justify-between py-2 px-3 rounded-lg bg-[#ffffff] border border-[#1d3d0f]/5"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-md bg-[#1d3d0f] flex items-center justify-center text-[10px] font-bold text-[#e8ff79]">
-                          {email.charAt(0).toUpperCase()}
-                        </div>
-                        <span className="text-sm text-[#000000]">{email}</span>
-                      </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-[#1d3d0f]/8 text-[#1d3d0f]/50 font-medium">
-                        Permanent
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Dynamic admins from DB */}
-              {admins.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
-                    Added Admins
-                  </h3>
-                  <div className="space-y-2">
-                    {admins.map((admin) => (
-                      <div
-                        key={admin.email}
-                        className="flex items-center justify-between py-2 px-3 rounded-lg bg-[#ffffff] border border-[#1d3d0f]/5"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-md bg-[#e8ff79] flex items-center justify-center text-[10px] font-bold text-[#1d3d0f]">
-                            {admin.email.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <span className="text-sm text-[#000000]">{admin.email}</span>
-                            {admin.added_by && (
-                              <span className="text-[10px] text-[#1d3d0f]/30 ml-2">
-                                added by {admin.added_by.split("@")[0]}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleRemoveAdmin(admin.email)}
-                          className="text-[10px] text-red-400 hover:text-red-600 transition-colors font-medium"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Add admin form */}
-              <div className="pt-3 border-t border-[#1d3d0f]/6">
-                <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-2">
-                  Add Admin
-                </h3>
-                <form onSubmit={handleAddAdmin} className="flex gap-2">
-                  <input
-                    type="email"
-                    value={newAdminEmail}
-                    onChange={(e) => {
-                      setNewAdminEmail(e.target.value);
-                      setAdminError("");
-                    }}
-                    placeholder="name@neon.fund"
-                    className="flex-1 px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/20 focus:outline-none focus:border-[#1d3d0f]/25 transition-colors"
-                  />
-                  <button
-                    type="submit"
-                    disabled={addingAdmin || !newAdminEmail.trim()}
-                    className="px-4 py-2 bg-[#1d3d0f] text-[#e8ff79] rounded-lg text-sm font-semibold hover:bg-[#000000] transition-colors disabled:opacity-30"
-                  >
-                    {addingAdmin ? "..." : "Add"}
-                  </button>
-                </form>
-                {adminError && (
-                  <p className="text-xs text-red-600 mt-1.5">{adminError}</p>
-                )}
-                <p className="text-[10px] text-[#1d3d0f]/25 mt-2">
-                  Only @neon.fund emails can be added as admins
-                </p>
-              </div>
-            </div>
-          </section>
-        )}
       </div>
 
       {/* ── Right sidebar — Calendar ── */}
