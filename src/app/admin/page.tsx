@@ -850,107 +850,37 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Event cards */}
-        <div className="space-y-3">
-          {events.map((event) => {
-            const pct =
-              event.guestCount > 0
-                ? Math.round(
-                    (event.profileCount / event.guestCount) * 100
-                  )
-                : 0;
+        {/* Active events */}
+        {events.filter((e) => e.is_active).length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
+              Active Now
+            </h3>
+            <div className="space-y-3">
+              {events
+                .filter((e) => e.is_active)
+                .map((event) => (
+                  <EventCard key={event.id} event={event} highlighted />
+                ))}
+            </div>
+          </div>
+        )}
 
-            return (
-              <Link
-                key={event.id}
-                href={`/admin/event/${event.slug}`}
-                className="group block bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 hover:border-[#1d3d0f]/18 transition-all"
-              >
-                <div className="p-5 flex gap-5">
-                  {/* Image thumbnail */}
-                  {event.image_url && (
-                    <div className="hidden sm:block w-24 h-24 rounded-lg overflow-hidden border border-[#1d3d0f]/8 flex-shrink-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={event.image_url}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h3 className="text-[15px] font-bold text-[#000000] truncate">
-                          {event.name}
-                        </h3>
-                        <p className="text-xs text-[#1d3d0f]/40 mt-0.5">
-                          {event.event_date
-                            ? new Date(
-                                event.event_date
-                              ).toLocaleDateString("en-IN", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                              })
-                            : "Date TBD"}
-                          {event.location && (
-                            <>
-                              <span className="mx-1 text-[#1d3d0f]/15">
-                                |
-                              </span>
-                              {event.location}
-                            </>
-                          )}
-                        </p>
-                      </div>
-                      <span
-                        className={`flex-shrink-0 text-[10px] px-2 py-0.5 rounded font-semibold ${
-                          event.is_active
-                            ? "bg-[#e8ff79] text-[#1d3d0f]"
-                            : "bg-[#000000]/5 text-[#000000]/30"
-                        }`}
-                      >
-                        {event.is_active ? "Active" : "Closed"}
-                      </span>
-                    </div>
-
-                    {/* Stats row */}
-                    <div className="flex items-center gap-4 mt-3">
-                      <MiniStat label="Guests" value={event.guestCount} />
-                      <MiniStat
-                        label="Registered"
-                        value={event.profileCount}
-                        accent
-                      />
-                      <MiniStat label="Matches" value={event.matchCount} />
-                      <MiniStat label="Conv." value={`${pct}%`} />
-                    </div>
-                  </div>
-
-                  {/* Arrow */}
-                  <div className="hidden sm:flex items-center flex-shrink-0">
-                    <svg
-                      className="w-4 h-4 text-[#1d3d0f]/15 group-hover:text-[#1d3d0f]/40 transition-colors"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+        {/* Past / closed events */}
+        {events.filter((e) => !e.is_active).length > 0 && (
+          <div>
+            <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
+              Past Events
+            </h3>
+            <div className="space-y-3">
+              {events
+                .filter((e) => !e.is_active)
+                .map((event) => (
+                  <EventCard key={event.id} event={event} />
+                ))}
+            </div>
+          </div>
+        )}
 
         {events.length === 0 && (
           <div className="text-center py-16">
@@ -1240,5 +1170,99 @@ function EventCalendar({ events }: { events: EventWithStats[] }) {
         </div>
       )}
     </div>
+  );
+}
+
+function EventCard({
+  event,
+  highlighted,
+}: {
+  event: EventWithStats;
+  highlighted?: boolean;
+}) {
+  const pct =
+    event.guestCount > 0
+      ? Math.round((event.profileCount / event.guestCount) * 100)
+      : 0;
+
+  return (
+    <Link
+      href={`/admin/event/${event.slug}`}
+      className={`group block rounded-xl border transition-all ${
+        highlighted
+          ? "bg-[#ffffff] border-[#e8ff79] hover:border-[#1d3d0f]/25 shadow-sm"
+          : "bg-[#fdfff0] border-[#1d3d0f]/8 hover:border-[#1d3d0f]/18"
+      }`}
+    >
+      <div className="p-5 flex gap-5">
+        {/* Image thumbnail */}
+        {event.image_url && (
+          <div className="hidden sm:block w-24 h-24 rounded-lg overflow-hidden border border-[#1d3d0f]/8 flex-shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={event.image_url}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-[15px] font-bold text-[#000000] truncate">
+                {event.name}
+              </h3>
+              <p className="text-xs text-[#1d3d0f]/40 mt-0.5">
+                {event.event_date
+                  ? new Date(event.event_date).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : "Date TBD"}
+                {event.location && (
+                  <>
+                    <span className="mx-1 text-[#1d3d0f]/15">|</span>
+                    {event.location}
+                  </>
+                )}
+              </p>
+            </div>
+            {highlighted && (
+              <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded font-semibold bg-[#e8ff79] text-[#1d3d0f]">
+                Active
+              </span>
+            )}
+          </div>
+
+          {/* Stats row */}
+          <div className="flex items-center gap-4 mt-3">
+            <MiniStat label="Guests" value={event.guestCount} />
+            <MiniStat label="Registered" value={event.profileCount} accent />
+            <MiniStat label="MatchUps" value={event.matchCount} />
+            <MiniStat label="Conv." value={`${pct}%`} />
+          </div>
+        </div>
+
+        {/* Arrow */}
+        <div className="hidden sm:flex items-center flex-shrink-0">
+          <svg
+            className="w-4 h-4 text-[#1d3d0f]/15 group-hover:text-[#1d3d0f]/40 transition-colors"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
+        </div>
+      </div>
+    </Link>
   );
 }
