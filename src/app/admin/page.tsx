@@ -421,122 +421,116 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="space-y-10">
-      {/* ── Dashboard metrics ── */}
-      <section>
-        <h1 className="text-2xl font-bold text-[#000000] tracking-tight mb-6">
-          Dashboard
-        </h1>
+    <div className="flex gap-6">
+      {/* ── Main column ── */}
+      <div className="flex-1 min-w-0 space-y-10">
+        {/* ── Dashboard metrics ── */}
+        <section>
+          <h1 className="text-2xl font-bold text-[#000000] tracking-tight mb-6">
+            Dashboard
+          </h1>
 
-        {/* Top-level stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <MetricCard label="Total Events" value={metrics?.totalEvents ?? 0} />
-          <MetricCard
-            label="Active"
-            value={metrics?.activeEvents ?? 0}
-            accent
-          />
-          <MetricCard
-            label="Total Guests"
-            value={metrics?.totalGuests ?? 0}
-          />
-          <MetricCard
-            label="Registered"
-            value={metrics?.totalRegistered ?? 0}
-            accent
-          />
-          <MetricCard label="Matches" value={metrics?.totalMatches ?? 0} />
-          <MetricCard
-            label="Avg Conversion"
-            value={`${metrics?.overallConversion ?? 0}%`}
-          />
-        </div>
-
-        {/* Second row — repeat registrations + per-event breakdown */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
-          {/* Repeat registrations card */}
-          <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider">
-                Repeat Attendees
-              </h3>
-              <span className="text-xl font-bold text-[#1d3d0f]">
-                {metrics?.repeatRegistrations ?? 0}
-              </span>
-            </div>
-            <p className="text-xs text-[#1d3d0f]/40 mb-3">
-              People who registered for more than one event
-            </p>
-            {metrics && metrics.repeatEmails.length > 0 ? (
-              <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                {metrics.repeatEmails.map((email) => (
-                  <div
-                    key={email}
-                    className="flex items-center gap-2 text-xs text-[#1d3d0f]/70"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#e8ff79] flex-shrink-0" />
-                    <span className="truncate">{email}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-[#1d3d0f]/25 italic">
-                No repeat attendees yet
-              </p>
-            )}
+          {/* Top-level stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <MetricCard label="Total Events" value={metrics?.totalEvents ?? 0} />
+            <MetricCard
+              label="Active"
+              value={metrics?.activeEvents ?? 0}
+              accent
+            />
+            <MetricCard
+              label="Total Guests"
+              value={metrics?.totalGuests ?? 0}
+            />
+            <MetricCard
+              label="Registered"
+              value={metrics?.totalRegistered ?? 0}
+              accent
+            />
+            <MetricCard label="MatchUps" value={metrics?.totalMatches ?? 0} />
+            <MetricCard
+              label="Avg Conversion"
+              value={`${metrics?.overallConversion ?? 0}%`}
+            />
           </div>
 
-          {/* Per-event conversion breakdown */}
-          <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-5">
-            <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
-              Conversion by Event
-            </h3>
-            <div className="space-y-3">
-              {events.map((event) => {
-                const pct =
-                  event.guestCount > 0
-                    ? Math.round(
-                        (event.profileCount / event.guestCount) * 100
-                      )
-                    : 0;
-                return (
-                  <div key={event.id}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-[#000000] truncate mr-3">
-                        {event.name}
-                      </span>
-                      <span className="text-xs font-bold text-[#1d3d0f] flex-shrink-0">
-                        {pct}%
-                      </span>
+          {/* Second row — repeat registrations + per-event breakdown */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+            {/* Repeat registrations card */}
+            <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider">
+                  Repeat Attendees
+                </h3>
+                <span className="text-xl font-bold text-[#1d3d0f]">
+                  {metrics?.repeatRegistrations ?? 0}
+                </span>
+              </div>
+              <p className="text-xs text-[#1d3d0f]/40 mb-3">
+                People who registered for more than one event
+              </p>
+              {metrics && metrics.repeatEmails.length > 0 ? (
+                <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                  {metrics.repeatEmails.map((email) => (
+                    <div
+                      key={email}
+                      className="flex items-center gap-2 text-xs text-[#1d3d0f]/70"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#e8ff79] flex-shrink-0" />
+                      <span className="truncate">{email}</span>
                     </div>
-                    <div className="w-full h-2 bg-[#1d3d0f]/5 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#e8ff79] rounded-full transition-all duration-500"
-                        style={{ width: `${Math.min(pct, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-              {events.length === 0 && (
+                  ))}
+                </div>
+              ) : (
                 <p className="text-xs text-[#1d3d0f]/25 italic">
-                  No events yet
+                  No repeat attendees yet
                 </p>
               )}
             </div>
+
+            {/* Per-event conversion breakdown */}
+            <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-5">
+              <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
+                Conversion by Event
+              </h3>
+              <div className="space-y-3">
+                {events.map((event) => {
+                  const pct =
+                    event.guestCount > 0
+                      ? Math.round(
+                          (event.profileCount / event.guestCount) * 100
+                        )
+                      : 0;
+                  return (
+                    <div key={event.id}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-[#000000] truncate mr-3">
+                          {event.name}
+                        </span>
+                        <span className="text-xs font-bold text-[#1d3d0f] flex-shrink-0">
+                          {pct}%
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-[#1d3d0f]/5 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[#e8ff79] rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min(pct, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+                {events.length === 0 && (
+                  <p className="text-xs text-[#1d3d0f]/25 italic">
+                    No events yet
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── Calendar ── */}
-      <section>
-        <h2 className="text-lg font-bold text-[#000000] tracking-tight mb-4">
-          Calendar
-        </h2>
-        <EventCalendar events={events} />
-      </section>
-
-      {/* ── Events list ── */}
+        {/* ── Events list ── */}
       <section>
         <div className="flex items-end justify-between mb-5">
           <h2 className="text-lg font-bold text-[#000000] tracking-tight">
@@ -964,6 +958,17 @@ export default function AdminPage() {
           </div>
         )}
       </section>
+      </div>
+
+      {/* ── Right sidebar — Calendar ── */}
+      <aside className="hidden lg:block w-72 flex-shrink-0">
+        <div className="sticky top-20">
+          <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
+            Calendar
+          </h3>
+          <EventCalendar events={events} />
+        </div>
+      </aside>
     </div>
   );
 }
@@ -1067,34 +1072,34 @@ function EventCalendar({ events }: { events: EventWithStats[] }) {
   });
 
   return (
-    <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-5">
+    <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-4">
       {/* Header: month nav */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-bold text-[#000000]">{monthLabel}</h3>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-[13px] font-bold text-[#000000]">{monthLabel}</h3>
           {!(today.getFullYear() === year && today.getMonth() === month) && (
             <button
               onClick={goToday}
-              className="text-[10px] px-2 py-0.5 rounded bg-[#1d3d0f]/5 text-[#1d3d0f]/50 hover:text-[#1d3d0f] transition-colors"
+              className="text-[9px] px-1.5 py-0.5 rounded bg-[#1d3d0f]/5 text-[#1d3d0f]/50 hover:text-[#1d3d0f] transition-colors"
             >
               Today
             </button>
           )}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <button
             onClick={prev}
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#1d3d0f]/5 transition-colors text-[#1d3d0f]/40 hover:text-[#1d3d0f]"
+            className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-[#1d3d0f]/5 transition-colors text-[#1d3d0f]/40 hover:text-[#1d3d0f]"
           >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           <button
             onClick={next}
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#1d3d0f]/5 transition-colors text-[#1d3d0f]/40 hover:text-[#1d3d0f]"
+            className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-[#1d3d0f]/5 transition-colors text-[#1d3d0f]/40 hover:text-[#1d3d0f]"
           >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>
@@ -1102,11 +1107,11 @@ function EventCalendar({ events }: { events: EventWithStats[] }) {
       </div>
 
       {/* Day headers */}
-      <div className="grid grid-cols-7 mb-1">
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+      <div className="grid grid-cols-7 mb-0.5">
+        {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
           <div
-            key={d}
-            className="text-center text-[10px] font-semibold text-[#1d3d0f]/30 uppercase tracking-wider py-1"
+            key={`${d}-${i}`}
+            className="text-center text-[9px] font-semibold text-[#1d3d0f]/30 uppercase py-1"
           >
             {d}
           </div>
@@ -1114,7 +1119,7 @@ function EventCalendar({ events }: { events: EventWithStats[] }) {
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7">
+      <div className="grid grid-cols-7 gap-0.5">
         {cells.map((day, i) => {
           if (day === null) {
             return <div key={`empty-${i}`} className="aspect-square" />;
@@ -1128,7 +1133,7 @@ function EventCalendar({ events }: { events: EventWithStats[] }) {
           return (
             <div
               key={key}
-              className={`aspect-square flex flex-col items-center justify-center relative rounded-lg transition-colors ${
+              className={`aspect-square flex flex-col items-center justify-center rounded-md transition-colors ${
                 hasEvent
                   ? "bg-[#1d3d0f] cursor-default"
                   : todayCell
@@ -1142,12 +1147,12 @@ function EventCalendar({ events }: { events: EventWithStats[] }) {
               }
             >
               <span
-                className={`text-xs font-medium leading-none ${
+                className={`text-[11px] leading-none ${
                   hasEvent
                     ? "text-[#e8ff79] font-bold"
                     : todayCell
                       ? "text-[#1d3d0f] font-bold"
-                      : "text-[#000000]/60"
+                      : "text-[#000000]/50"
                 }`}
               >
                 {day}
@@ -1162,32 +1167,76 @@ function EventCalendar({ events }: { events: EventWithStats[] }) {
 
       {/* Events this month */}
       {monthEvents.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-[#1d3d0f]/6 space-y-2">
+        <div className="mt-3 pt-3 border-t border-[#1d3d0f]/6 space-y-2">
           {monthEvents.map((ev) => (
             <Link
               key={ev.id}
               href={`/admin/event/${ev.slug}`}
-              className="flex items-center gap-3 group"
+              className="flex items-center gap-2 group"
             >
-              <span className="w-2 h-2 rounded-full bg-[#1d3d0f] flex-shrink-0" />
-              <span className="text-xs font-medium text-[#000000] group-hover:underline truncate">
-                {ev.name}
-              </span>
-              <span className="text-[10px] text-[#1d3d0f]/35 flex-shrink-0">
-                {ev.event_date
-                  ? new Date(ev.event_date).toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                    })
-                  : ""}
-              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#1d3d0f] flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <span className="text-[11px] font-medium text-[#000000] group-hover:underline truncate block">
+                  {ev.name}
+                </span>
+                <span className="text-[10px] text-[#1d3d0f]/35">
+                  {ev.event_date
+                    ? new Date(ev.event_date).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                      })
+                    : ""}
+                </span>
+              </div>
               {ev.is_active && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#e8ff79] text-[#1d3d0f] font-semibold flex-shrink-0">
+                <span className="text-[8px] px-1.5 py-0.5 rounded bg-[#e8ff79] text-[#1d3d0f] font-semibold flex-shrink-0">
                   Active
                 </span>
               )}
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* All events link */}
+      {events.length > 0 && monthEvents.length === 0 && (
+        <div className="mt-3 pt-3 border-t border-[#1d3d0f]/6">
+          <p className="text-[10px] text-[#1d3d0f]/25 italic text-center">
+            No events this month
+          </p>
+        </div>
+      )}
+
+      {/* Upcoming events from other months */}
+      {events.length > 0 && (
+        <div className={`${monthEvents.length > 0 ? "mt-2" : "mt-3"} space-y-1.5`}>
+          {events
+            .filter((ev) => {
+              if (!ev.event_date) return false;
+              const d = new Date(ev.event_date);
+              return !(d.getFullYear() === year && d.getMonth() === month);
+            })
+            .slice(0, 3)
+            .map((ev) => (
+              <Link
+                key={ev.id}
+                href={`/admin/event/${ev.slug}`}
+                className="flex items-center gap-2 group opacity-40 hover:opacity-70 transition-opacity"
+              >
+                <span className="w-1 h-1 rounded-full bg-[#1d3d0f] flex-shrink-0" />
+                <span className="text-[10px] text-[#000000] group-hover:underline truncate">
+                  {ev.name}
+                </span>
+                <span className="text-[9px] text-[#1d3d0f]/35 flex-shrink-0">
+                  {ev.event_date
+                    ? new Date(ev.event_date).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                      })
+                    : ""}
+                </span>
+              </Link>
+            ))}
         </div>
       )}
     </div>

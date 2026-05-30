@@ -171,7 +171,7 @@ export default function AdminLayout({
       <div className="min-h-screen bg-[#ffffff]">
         {/* Header */}
         <header className="sticky top-0 z-50 bg-[#1d3d0f]">
-          <div className="max-w-5xl mx-auto px-5 sm:px-6 h-14 flex items-center justify-between">
+          <div className="max-w-7xl mx-auto px-5 sm:px-6 h-14 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Image
                 src="/neon-logo.png"
@@ -222,7 +222,7 @@ export default function AdminLayout({
           </div>
         </header>
 
-        <main className="max-w-5xl mx-auto px-5 sm:px-6 py-8">
+        <main className="max-w-7xl mx-auto px-5 sm:px-6 py-8">
           {children}
         </main>
       </div>
