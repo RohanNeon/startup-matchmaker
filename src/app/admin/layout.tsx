@@ -221,22 +221,22 @@ export default function AdminLayout({
 
             {/* ── Right: Luma + Settings + Profile ── */}
             <div className="flex items-center gap-1">
-              {/* Luma — external link */}
+              {/* Luma — create event */}
               <a
                 href="https://lu.ma/create"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-[#ffffff]/50 hover:text-[#ffffff]/90 transition-colors px-2.5 py-1.5 rounded-md hover:bg-[#ffffff]/5"
+                className="flex items-center gap-1.5 text-[11px] text-[#ffffff]/50 hover:text-[#ffffff]/90 transition-colors px-2.5 py-1.5 rounded-md hover:bg-[#ffffff]/5"
                 title="Create event on Luma"
               >
                 <Image
                   src="/luma-logo.png"
                   alt="Luma"
-                  width={16}
-                  height={16}
+                  width={14}
+                  height={14}
                   className="brightness-200"
                 />
-                <span className="hidden sm:inline">Luma</span>
+                <span className="hidden sm:inline">+ Create on Luma</span>
               </a>
 
               {/* Settings — admin only */}
