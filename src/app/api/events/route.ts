@@ -52,3 +52,37 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ event: data });
 }
+
+// DELETE /api/events - delete an event and its related data (super admin only)
+export async function DELETE(request: Request) {
+  const auth = await verifySuperAdmin(request);
+  if (!auth.authorized) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  const body = await request.json();
+  const { eventId } = body;
+
+  if (!eventId) {
+    return NextResponse.json({ error: "eventId is required" }, { status: 400 });
+  }
+
+  const supabaseAdmin = getSupabaseAdmin();
+
+  // Delete related data first (matches, profiles, luma_list for this event)
+  await supabaseAdmin.from("matches").delete().eq("event_id", eventId);
+  await supabaseAdmin.from("profiles").delete().eq("event_id", eventId);
+  await supabaseAdmin.from("luma_list").delete().eq("event_id", eventId);
+
+  // Delete the event itself
+  const { error } = await supabaseAdmin
+    .from("events")
+    .delete()
+    .eq("id", eventId);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}

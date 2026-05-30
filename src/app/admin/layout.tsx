@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 
-const SUPER_ADMIN_EMAILS = ["rohan@neon.fund"];
+const SUPER_ADMIN_EMAILS = ["rohan@neon.fund", "nansi@neon.fund"];
 const ALLOWED_DOMAIN = "neon.fund";
 
 export type AdminRole = "super_admin" | "viewer";
@@ -40,7 +40,7 @@ export default function AdminLayout({
       async (event, session) => {
         if (event === "SIGNED_IN" && session?.user) {
           const email = session.user.email || "";
-          const result = validateAndSetUser(email, session.user.user_metadata);
+          const result = await validateAndSetUser(email, session.user.user_metadata);
           if (!result) {
             await supabase.auth.signOut();
             setError("Access restricted to @neon.fund accounts only.");
@@ -58,7 +58,7 @@ export default function AdminLayout({
 
     if (session?.user) {
       const email = session.user.email || "";
-      const result = validateAndSetUser(email, session.user.user_metadata);
+      const result = await validateAndSetUser(email, session.user.user_metadata);
       if (!result) {
         await supabase.auth.signOut();
         setError("Access restricted to @neon.fund accounts only.");
@@ -67,18 +67,33 @@ export default function AdminLayout({
     setLoading(false);
   }
 
-  function validateAndSetUser(
+  async function validateAndSetUser(
     email: string,
     metadata: Record<string, unknown> | undefined
-  ): boolean {
+  ): Promise<boolean> {
     const domain = email.split("@")[1]?.toLowerCase();
     if (domain !== ALLOWED_DOMAIN) {
       return false;
     }
 
-    const role: AdminRole = SUPER_ADMIN_EMAILS.includes(email.toLowerCase())
+    // Check hardcoded list first
+    let role: AdminRole = SUPER_ADMIN_EMAILS.includes(email.toLowerCase())
       ? "super_admin"
       : "viewer";
+
+    // If not in hardcoded list, check dynamic admins table
+    if (role === "viewer") {
+      try {
+        const { data } = await supabase
+          .from("admins")
+          .select("email")
+          .eq("email", email.toLowerCase())
+          .single();
+        if (data) role = "super_admin";
+      } catch {
+        // Table might not exist yet
+      }
+    }
 
     setUser({
       email,

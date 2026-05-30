@@ -162,10 +162,18 @@ export default function AdminPage() {
   const [uploadedFileName, setUploadedFileName] = useState("");
   const [uploadedColumns, setUploadedColumns] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null); // eventId being deleted
+
+  // Admin management
+  const [admins, setAdmins] = useState<{ email: string; added_by: string | null; created_at: string }[]>([]);
+  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [addingAdmin, setAddingAdmin] = useState(false);
+  const [adminError, setAdminError] = useState("");
 
   useEffect(() => {
     loadAll();
-  }, []);
+    if (isSuperAdmin) loadAdmins();
+  }, [isSuperAdmin]);
 
   async function loadAll() {
     await Promise.all([loadEvents(), loadMetrics()]);
@@ -303,6 +311,87 @@ export default function AdminPage() {
       "Content-Type": "application/json",
       Authorization: `Bearer ${session?.access_token || ""}`,
     };
+  }
+
+  async function handleDeleteEvent(eventId: string, eventName: string) {
+    const confirmed = window.confirm(
+      `⚠️ Delete "${eventName}"?\n\nThis will permanently delete the event and ALL related data (guest list, registrations, matches).\n\nThis cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    const doubleConfirm = window.confirm(
+      `Final confirmation: permanently delete "${eventName}" and all its data?`
+    );
+    if (!doubleConfirm) return;
+
+    setDeleting(eventId);
+    const headers = await getAuthHeaders();
+
+    const res = await fetch("/api/events", {
+      method: "DELETE",
+      headers,
+      body: JSON.stringify({ eventId }),
+    });
+
+    if (res.ok) {
+      setLoading(true);
+      await loadAll();
+    } else {
+      const data = await res.json();
+      alert(`Failed to delete: ${data.error}`);
+    }
+    setDeleting(null);
+  }
+
+  async function loadAdmins() {
+    const headers = await getAuthHeaders();
+    const res = await fetch("/api/admins", { headers });
+    if (res.ok) {
+      const data = await res.json();
+      setAdmins(data.admins || []);
+    }
+  }
+
+  async function handleAddAdmin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newAdminEmail.trim()) return;
+    setAddingAdmin(true);
+    setAdminError("");
+
+    const headers = await getAuthHeaders();
+    const res = await fetch("/api/admins", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ email: newAdminEmail.trim() }),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      setNewAdminEmail("");
+      await loadAdmins();
+    } else {
+      setAdminError(data.error || "Failed to add admin");
+    }
+    setAddingAdmin(false);
+  }
+
+  async function handleRemoveAdmin(email: string) {
+    const confirmed = window.confirm(`Remove ${email} as admin?`);
+    if (!confirmed) return;
+
+    const headers = await getAuthHeaders();
+    const res = await fetch("/api/admins", {
+      method: "DELETE",
+      headers,
+      body: JSON.stringify({ email }),
+    });
+
+    if (res.ok) {
+      await loadAdmins();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Failed to remove admin");
+    }
   }
 
   async function handleFetchLuma() {
@@ -860,7 +949,7 @@ export default function AdminPage() {
               {events
                 .filter((e) => e.is_active)
                 .map((event) => (
-                  <EventCard key={event.id} event={event} highlighted />
+                  <EventCard key={event.id} event={event} highlighted isSuperAdmin={isSuperAdmin} deleting={deleting} onDelete={handleDeleteEvent} />
                 ))}
             </div>
           </div>
@@ -876,7 +965,7 @@ export default function AdminPage() {
               {events
                 .filter((e) => !e.is_active)
                 .map((event) => (
-                  <EventCard key={event.id} event={event} />
+                  <EventCard key={event.id} event={event} isSuperAdmin={isSuperAdmin} deleting={deleting} onDelete={handleDeleteEvent} />
                 ))}
             </div>
           </div>
@@ -888,6 +977,110 @@ export default function AdminPage() {
           </div>
         )}
       </section>
+
+        {/* ── Admin Management ── */}
+        {isSuperAdmin && (
+          <section>
+            <h2 className="text-lg font-bold text-[#000000] tracking-tight mb-4">
+              Admin Management
+            </h2>
+            <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-5">
+              {/* Hardcoded admins */}
+              <div className="mb-4">
+                <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
+                  Core Admins
+                </h3>
+                <div className="space-y-2">
+                  {["rohan@neon.fund", "nansi@neon.fund"].map((email) => (
+                    <div
+                      key={email}
+                      className="flex items-center justify-between py-2 px-3 rounded-lg bg-[#ffffff] border border-[#1d3d0f]/5"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-md bg-[#1d3d0f] flex items-center justify-center text-[10px] font-bold text-[#e8ff79]">
+                          {email.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-sm text-[#000000]">{email}</span>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-[#1d3d0f]/8 text-[#1d3d0f]/50 font-medium">
+                        Permanent
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Dynamic admins from DB */}
+              {admins.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
+                    Added Admins
+                  </h3>
+                  <div className="space-y-2">
+                    {admins.map((admin) => (
+                      <div
+                        key={admin.email}
+                        className="flex items-center justify-between py-2 px-3 rounded-lg bg-[#ffffff] border border-[#1d3d0f]/5"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-md bg-[#e8ff79] flex items-center justify-center text-[10px] font-bold text-[#1d3d0f]">
+                            {admin.email.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <span className="text-sm text-[#000000]">{admin.email}</span>
+                            {admin.added_by && (
+                              <span className="text-[10px] text-[#1d3d0f]/30 ml-2">
+                                added by {admin.added_by.split("@")[0]}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveAdmin(admin.email)}
+                          className="text-[10px] text-red-400 hover:text-red-600 transition-colors font-medium"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Add admin form */}
+              <div className="pt-3 border-t border-[#1d3d0f]/6">
+                <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-2">
+                  Add Admin
+                </h3>
+                <form onSubmit={handleAddAdmin} className="flex gap-2">
+                  <input
+                    type="email"
+                    value={newAdminEmail}
+                    onChange={(e) => {
+                      setNewAdminEmail(e.target.value);
+                      setAdminError("");
+                    }}
+                    placeholder="name@neon.fund"
+                    className="flex-1 px-3 py-2 rounded-lg border border-[#1d3d0f]/10 text-sm bg-[#ffffff] placeholder:text-[#1d3d0f]/20 focus:outline-none focus:border-[#1d3d0f]/25 transition-colors"
+                  />
+                  <button
+                    type="submit"
+                    disabled={addingAdmin || !newAdminEmail.trim()}
+                    className="px-4 py-2 bg-[#1d3d0f] text-[#e8ff79] rounded-lg text-sm font-semibold hover:bg-[#000000] transition-colors disabled:opacity-30"
+                  >
+                    {addingAdmin ? "..." : "Add"}
+                  </button>
+                </form>
+                {adminError && (
+                  <p className="text-xs text-red-600 mt-1.5">{adminError}</p>
+                )}
+                <p className="text-[10px] text-[#1d3d0f]/25 mt-2">
+                  Only @neon.fund emails can be added as admins
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
       </div>
 
       {/* ── Right sidebar — Calendar ── */}
@@ -1176,93 +1369,119 @@ function EventCalendar({ events }: { events: EventWithStats[] }) {
 function EventCard({
   event,
   highlighted,
+  isSuperAdmin,
+  deleting,
+  onDelete,
 }: {
   event: EventWithStats;
   highlighted?: boolean;
+  isSuperAdmin?: boolean;
+  deleting?: string | null;
+  onDelete?: (eventId: string, eventName: string) => void;
 }) {
   const pct =
     event.guestCount > 0
       ? Math.round((event.profileCount / event.guestCount) * 100)
       : 0;
+  const isDeleting = deleting === event.id;
 
   return (
-    <Link
-      href={`/admin/event/${event.slug}`}
-      className={`group block rounded-xl border transition-all ${
+    <div
+      className={`rounded-xl border transition-all ${
+        isDeleting ? "opacity-50 pointer-events-none" : ""
+      } ${
         highlighted
-          ? "bg-[#ffffff] border-[#e8ff79] hover:border-[#1d3d0f]/25 shadow-sm"
-          : "bg-[#fdfff0] border-[#1d3d0f]/8 hover:border-[#1d3d0f]/18"
+          ? "bg-[#ffffff] border-[#e8ff79] shadow-sm"
+          : "bg-[#fdfff0] border-[#1d3d0f]/8"
       }`}
     >
-      <div className="p-5 flex gap-5">
-        {/* Image thumbnail */}
-        {event.image_url && (
-          <div className="hidden sm:block w-24 h-24 rounded-lg overflow-hidden border border-[#1d3d0f]/8 flex-shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={event.image_url}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h3 className="text-[15px] font-bold text-[#000000] truncate">
-                {event.name}
-              </h3>
-              <p className="text-xs text-[#1d3d0f]/40 mt-0.5">
-                {event.event_date
-                  ? new Date(event.event_date).toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })
-                  : "Date TBD"}
-                {event.location && (
-                  <>
-                    <span className="mx-1 text-[#1d3d0f]/15">|</span>
-                    {event.location}
-                  </>
-                )}
-              </p>
+      <Link
+        href={`/admin/event/${event.slug}`}
+        className="group block"
+      >
+        <div className="p-5 flex gap-5">
+          {/* Image thumbnail */}
+          {event.image_url && (
+            <div className="hidden sm:block w-24 h-24 rounded-lg overflow-hidden border border-[#1d3d0f]/8 flex-shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={event.image_url}
+                alt=""
+                className="w-full h-full object-cover"
+              />
             </div>
-            {highlighted && (
-              <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded font-semibold bg-[#e8ff79] text-[#1d3d0f]">
-                Active
-              </span>
-            )}
+          )}
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="text-[15px] font-bold text-[#000000] truncate group-hover:text-[#1d3d0f] transition-colors">
+                  {event.name}
+                </h3>
+                <p className="text-xs text-[#1d3d0f]/40 mt-0.5">
+                  {event.event_date
+                    ? new Date(event.event_date).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "Date TBD"}
+                  {event.location && (
+                    <>
+                      <span className="mx-1 text-[#1d3d0f]/15">|</span>
+                      {event.location}
+                    </>
+                  )}
+                </p>
+              </div>
+              {highlighted && (
+                <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded font-semibold bg-[#e8ff79] text-[#1d3d0f]">
+                  Active
+                </span>
+              )}
+            </div>
+
+            {/* Stats row */}
+            <div className="flex items-center gap-4 mt-3">
+              <MiniStat label="Guests" value={event.guestCount} />
+              <MiniStat label="Registered" value={event.profileCount} accent />
+              <MiniStat label="MatchUps" value={event.matchCount} />
+              <MiniStat label="Conv." value={`${pct}%`} />
+            </div>
           </div>
 
-          {/* Stats row */}
-          <div className="flex items-center gap-4 mt-3">
-            <MiniStat label="Guests" value={event.guestCount} />
-            <MiniStat label="Registered" value={event.profileCount} accent />
-            <MiniStat label="MatchUps" value={event.matchCount} />
-            <MiniStat label="Conv." value={`${pct}%`} />
+          {/* Arrow */}
+          <div className="hidden sm:flex items-center flex-shrink-0">
+            <svg
+              className="w-4 h-4 text-[#1d3d0f]/15 group-hover:text-[#1d3d0f]/40 transition-colors"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
           </div>
         </div>
+      </Link>
 
-        {/* Arrow */}
-        <div className="hidden sm:flex items-center flex-shrink-0">
-          <svg
-            className="w-4 h-4 text-[#1d3d0f]/15 group-hover:text-[#1d3d0f]/40 transition-colors"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
+      {/* Delete button — only for super admins */}
+      {isSuperAdmin && onDelete && (
+        <div className="px-5 pb-3 flex justify-end">
+          <button
+            onClick={() => onDelete(event.id, event.name)}
+            disabled={isDeleting}
+            className="text-[11px] text-[#1d3d0f]/20 hover:text-red-500 transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
+            {isDeleting ? "Deleting..." : "Delete event"}
+          </button>
         </div>
-      </div>
-    </Link>
+      )}
+    </div>
   );
 }

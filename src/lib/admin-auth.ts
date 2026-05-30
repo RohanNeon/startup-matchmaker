@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
-const SUPER_ADMIN_EMAILS = ["rohan@neon.fund"];
+// Hardcoded fallback — always have access even if DB table doesn't exist yet
+const SUPER_ADMIN_EMAILS = ["rohan@neon.fund", "nansi@neon.fund"];
 const ALLOWED_DOMAIN = "neon.fund";
 
 export function getSupabaseAdmin() {
@@ -11,9 +12,34 @@ export function getSupabaseAdmin() {
 }
 
 /**
+ * Check if an email is a super admin.
+ * Checks hardcoded list first, then falls back to `admins` table in Supabase.
+ */
+export async function isAdminEmail(email: string): Promise<boolean> {
+  const lower = email.toLowerCase();
+
+  // Hardcoded list always works
+  if (SUPER_ADMIN_EMAILS.includes(lower)) return true;
+
+  // Check dynamic admins table
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data } = await supabaseAdmin
+      .from("admins")
+      .select("email")
+      .eq("email", lower)
+      .single();
+    return !!data;
+  } catch {
+    // Table might not exist yet — that's fine
+    return false;
+  }
+}
+
+/**
  * Verify the request is from an authenticated super admin.
  * Expects Authorization: Bearer <supabase_access_token> header.
- * Returns { authorized: true, email } or { authorized: false, error, status }.
+ * Checks both hardcoded list and `admins` table.
  */
 export async function verifySuperAdmin(request: Request): Promise<
   | { authorized: true; email: string }
@@ -38,7 +64,8 @@ export async function verifySuperAdmin(request: Request): Promise<
     return { authorized: false, error: "Access restricted to @neon.fund accounts", status: 403 };
   }
 
-  if (!SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase())) {
+  const admin = await isAdminEmail(user.email);
+  if (!admin) {
     return { authorized: false, error: "Super admin access required", status: 403 };
   }
 
