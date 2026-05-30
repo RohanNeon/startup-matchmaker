@@ -528,6 +528,14 @@ export default function AdminPage() {
         </div>
       </section>
 
+      {/* ── Calendar ── */}
+      <section>
+        <h2 className="text-lg font-bold text-[#000000] tracking-tight mb-4">
+          Calendar
+        </h2>
+        <EventCalendar events={events} />
+      </section>
+
       {/* ── Events list ── */}
       <section>
         <div className="flex items-end justify-between mb-5">
@@ -1004,6 +1012,184 @@ function MiniStat({
         )}
       </p>
       <p className="text-[10px] text-[#1d3d0f]/30 mt-0.5">{label}</p>
+    </div>
+  );
+}
+
+function EventCalendar({ events }: { events: EventWithStats[] }) {
+  const [currentDate, setCurrentDate] = useState(() => new Date());
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startDay = firstDay.getDay(); // 0 = Sun
+  const daysInMonth = lastDay.getDate();
+
+  const today = new Date();
+  const isToday = (d: number) =>
+    today.getFullYear() === year &&
+    today.getMonth() === month &&
+    today.getDate() === d;
+
+  // Build a map: "YYYY-MM-DD" → event[]
+  const eventMap = new Map<string, EventWithStats[]>();
+  for (const ev of events) {
+    if (!ev.event_date) continue;
+    const key = ev.event_date.slice(0, 10);
+    if (!eventMap.has(key)) eventMap.set(key, []);
+    eventMap.get(key)!.push(ev);
+  }
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const getKey = (d: number) => `${year}-${pad(month + 1)}-${pad(d)}`;
+
+  const prev = () => setCurrentDate(new Date(year, month - 1, 1));
+  const next = () => setCurrentDate(new Date(year, month + 1, 1));
+  const goToday = () => setCurrentDate(new Date());
+
+  const monthLabel = firstDay.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+
+  // Build calendar grid cells
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < startDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  // Check if any events fall in the visible range to show the legend
+  const monthEvents = events.filter((ev) => {
+    if (!ev.event_date) return false;
+    const d = new Date(ev.event_date);
+    return d.getFullYear() === year && d.getMonth() === month;
+  });
+
+  return (
+    <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-5">
+      {/* Header: month nav */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-bold text-[#000000]">{monthLabel}</h3>
+          {!(today.getFullYear() === year && today.getMonth() === month) && (
+            <button
+              onClick={goToday}
+              className="text-[10px] px-2 py-0.5 rounded bg-[#1d3d0f]/5 text-[#1d3d0f]/50 hover:text-[#1d3d0f] transition-colors"
+            >
+              Today
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={prev}
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#1d3d0f]/5 transition-colors text-[#1d3d0f]/40 hover:text-[#1d3d0f]"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button
+            onClick={next}
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#1d3d0f]/5 transition-colors text-[#1d3d0f]/40 hover:text-[#1d3d0f]"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Day headers */}
+      <div className="grid grid-cols-7 mb-1">
+        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+          <div
+            key={d}
+            className="text-center text-[10px] font-semibold text-[#1d3d0f]/30 uppercase tracking-wider py-1"
+          >
+            {d}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7">
+        {cells.map((day, i) => {
+          if (day === null) {
+            return <div key={`empty-${i}`} className="aspect-square" />;
+          }
+
+          const key = getKey(day);
+          const dayEvents = eventMap.get(key) || [];
+          const hasEvent = dayEvents.length > 0;
+          const todayCell = isToday(day);
+
+          return (
+            <div
+              key={key}
+              className={`aspect-square flex flex-col items-center justify-center relative rounded-lg transition-colors ${
+                hasEvent
+                  ? "bg-[#1d3d0f] cursor-default"
+                  : todayCell
+                    ? "bg-[#1d3d0f]/8"
+                    : "hover:bg-[#1d3d0f]/3"
+              }`}
+              title={
+                hasEvent
+                  ? dayEvents.map((e) => e.name).join(", ")
+                  : undefined
+              }
+            >
+              <span
+                className={`text-xs font-medium leading-none ${
+                  hasEvent
+                    ? "text-[#e8ff79] font-bold"
+                    : todayCell
+                      ? "text-[#1d3d0f] font-bold"
+                      : "text-[#000000]/60"
+                }`}
+              >
+                {day}
+              </span>
+              {hasEvent && (
+                <span className="w-1 h-1 rounded-full bg-[#e8ff79] mt-0.5" />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Events this month */}
+      {monthEvents.length > 0 && (
+        <div className="mt-4 pt-3 border-t border-[#1d3d0f]/6 space-y-2">
+          {monthEvents.map((ev) => (
+            <Link
+              key={ev.id}
+              href={`/admin/event/${ev.slug}`}
+              className="flex items-center gap-3 group"
+            >
+              <span className="w-2 h-2 rounded-full bg-[#1d3d0f] flex-shrink-0" />
+              <span className="text-xs font-medium text-[#000000] group-hover:underline truncate">
+                {ev.name}
+              </span>
+              <span className="text-[10px] text-[#1d3d0f]/35 flex-shrink-0">
+                {ev.event_date
+                  ? new Date(ev.event_date).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                    })
+                  : ""}
+              </span>
+              {ev.is_active && (
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#e8ff79] text-[#1d3d0f] font-semibold flex-shrink-0">
+                  Active
+                </span>
+              )}
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
