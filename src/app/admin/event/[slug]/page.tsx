@@ -2,7 +2,6 @@
 
 import { use, useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
 import { supabase } from "@/lib/supabase";
@@ -467,99 +466,88 @@ export default function EventDashboard({
       </Link>
 
       {/* Header card */}
-      <div className="bg-white rounded-2xl border border-neon-dark/10 p-5 mb-6">
-        <div className="flex items-start justify-between mb-5">
-          <div>
-            <h1 className="text-xl font-bold text-neon-dark">{event.name}</h1>
-            <p className="text-sm text-neon-dark/50 mt-0.5">
-              {event.event_date
-                ? new Date(event.event_date).toLocaleDateString("en-IN", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })
-                : "Date TBD"}
-              {event.location && ` · ${event.location}`}
-            </p>
-            <div className="flex items-center gap-2 mt-1.5">
-              <p className="text-xs text-neon-dark/25 font-mono">
-                /event/{event.slug}
+      <div className="bg-white rounded-2xl border border-neon-dark/10 mb-6 overflow-hidden">
+        {/* Top section with event info */}
+        <div className="p-5 pb-4">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl font-bold text-neon-dark">{event.name}</h1>
+                {/* Status indicator */}
+                <span className={`text-[11px] px-2.5 py-1 rounded-full font-semibold flex items-center gap-1.5 ${
+                  event.is_active
+                    ? "bg-[#e8ff79]/40 text-neon-dark"
+                    : "bg-neon-dark/5 text-neon-dark/35"
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${event.is_active ? "bg-neon-dark" : "bg-neon-dark/20"}`} />
+                  {event.is_active ? "Active" : "Closed"}
+                </span>
+              </div>
+              <p className="text-sm text-neon-dark/45 mt-1">
+                {event.event_date
+                  ? new Date(event.event_date).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })
+                  : "Date TBD"}
+                {event.location && ` · ${event.location}`}
               </p>
-              {event.luma_url && (
-                <>
-                  <span className="text-neon-dark/15">·</span>
+              <div className="flex items-center gap-3 mt-2">
+                <span className="text-xs text-neon-dark/20 font-mono">
+                  /event/{event.slug}
+                </span>
+                {event.luma_url && (
                   <a
                     href={event.luma_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-[11px] text-neon-dark/40 hover:text-neon-dark/70 transition-colors bg-neon-dark/[0.03] hover:bg-neon-dark/[0.06] px-2 py-0.5 rounded-md"
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-neon-dark/30 hover:text-neon-dark/60 transition-colors"
                   >
-                    <Image src="/luma-logo.png" alt="Luma" width={12} height={12} />
-                    View on Luma
-                    <svg className="w-3 h-3 text-neon-dark/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                    Luma
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
                     </svg>
                   </a>
-                </>
-              )}
+                )}
+              </div>
             </div>
+
+            {/* Admin controls */}
+            {isSuperAdmin && (
+              <div className="flex items-center gap-1.5 flex-shrink-0 ml-4">
+                <button
+                  onClick={handleToggleActive}
+                  className="text-[11px] px-3 py-1.5 rounded-lg font-medium transition-colors text-neon-dark/40 hover:text-neon-dark hover:bg-neon-dark/5 border border-neon-dark/10"
+                >
+                  {event.is_active ? "Close Event" : "Reactivate"}
+                </button>
+                <button
+                  onClick={handleDeleteEvent}
+                  className="p-1.5 rounded-lg text-neon-dark/15 hover:text-neon-dark/50 hover:bg-neon-dark/5 transition-colors"
+                  title="Delete event"
+                >
+                  <IconTrash />
+                </button>
+              </div>
+            )}
           </div>
-
-          {/* Status badge (non-admin) */}
-          {!isSuperAdmin && (
-            <span
-              className={`text-xs px-3 py-1.5 rounded-full font-medium ${
-                event.is_active
-                  ? "bg-green-50 text-green-700"
-                  : "bg-neon-dark/5 text-neon-dark/40"
-              }`}
-            >
-              {event.is_active ? "Active" : "Closed"}
-            </span>
-          )}
-
-          {/* Admin controls */}
-          {isSuperAdmin && (
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={handleToggleActive}
-                className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors flex items-center gap-1.5 ${
-                  event.is_active
-                    ? "bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
-                    : "bg-neon-dark/5 text-neon-dark/40 hover:bg-neon-dark/10 border border-neon-dark/8"
-                }`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${event.is_active ? "bg-green-500" : "bg-neon-dark/20"}`} />
-                {event.is_active ? "Active" : "Closed"}
-              </button>
-              <button
-                onClick={handleDeleteEvent}
-                className="text-xs px-2.5 py-1.5 rounded-lg font-medium text-neon-dark/20 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors"
-                title="Delete event"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            </div>
-          )}
         </div>
 
-        {/* Metrics strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          <StatCard label="Invited" value={guests.length} icon={<IconList />} />
-          <StatCard label="Registered" value={participants.length} icon={<IconPerson />} />
-          <StatCard
+        {/* Metrics strip — full width with dividers */}
+        <div className="border-t border-neon-dark/6 grid grid-cols-2 sm:grid-cols-5 divide-x divide-neon-dark/6 bg-neon-bg/40">
+          <MetricCell label="Invited" value={guests.length} />
+          <MetricCell label="Registered" value={participants.length} highlight />
+          <MetricCell
             label="Conversion"
             value={
               guests.length > 0
                 ? `${Math.round((participants.length / guests.length) * 100)}%`
                 : "—"
             }
-            icon={<IconTrend />}
           />
-          <StatCard label="MatchUps" value={matches.length} icon={<IconLink />} />
-          <StatCard label="Matched" value={uniqueMatchProfiles} icon={<IconCheckCircle />} />
+          <MetricCell label="MatchUps" value={matches.length} />
+          <MetricCell label="Matched" value={uniqueMatchProfiles} />
         </div>
       </div>
 
@@ -765,14 +753,11 @@ function IconChevron({ open }: { open: boolean }) {
    Stat Card
    ═══════════════════════════════════════════ */
 
-function StatCard({ label, value, icon }: { label: string; value: number | string; icon: React.ReactNode }) {
+function MetricCell({ label, value, highlight }: { label: string; value: number | string; highlight?: boolean }) {
   return (
-    <div className="bg-neon-bg rounded-xl p-3 flex items-center gap-3">
-      <div className="text-neon-dark/25">{icon}</div>
-      <div>
-        <p className="text-lg font-bold text-neon-dark leading-tight">{value}</p>
-        <p className="text-[11px] text-neon-dark/45">{label}</p>
-      </div>
+    <div className="px-4 py-3.5 text-center">
+      <p className={`text-xl font-bold leading-tight ${highlight ? "text-neon-dark" : "text-neon-dark/80"}`}>{value}</p>
+      <p className="text-[10px] text-neon-dark/35 mt-0.5 uppercase tracking-wider font-medium">{label}</p>
     </div>
   );
 }
@@ -1736,19 +1721,19 @@ function EmailsTab({
       </div>
 
       {/* Step 4: Batch Send */}
-      <div className="p-5 bg-red-50/30">
+      <div className="p-5 bg-neon-dark/[0.02]">
         <div className="flex items-start gap-3">
-          <span className="w-7 h-7 flex items-center justify-center bg-red-600 text-white rounded-full text-xs font-bold shrink-0 mt-0.5">4</span>
+          <span className="w-7 h-7 flex items-center justify-center bg-neon-dark text-white rounded-full text-xs font-bold shrink-0 mt-0.5">4</span>
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-red-700">Send to All Participants</h3>
-            <p className="text-xs text-red-500/60 mt-0.5 mb-3">
+            <h3 className="text-sm font-semibold text-neon-dark">Send to All Participants</h3>
+            <p className="text-xs text-neon-dark/40 mt-0.5 mb-3">
               This will send MatchUp results to ALL registered participants. Two confirmation dialogs will appear.
             </p>
             <div className="flex items-center gap-3">
               <button
                 onClick={handleBatchSend}
                 disabled={sendingEmails || matches.length === 0}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
+                className="px-4 py-2 bg-neon-dark text-[#e8ff79] rounded-lg text-sm font-semibold hover:bg-black transition-colors disabled:opacity-50"
               >
                 {sendingEmails
                   ? "Sending..."
@@ -1820,7 +1805,9 @@ function DemandSupplyChart({ participants }: { participants: Participant[] }) {
                   <span className="text-xs text-neon-dark/50">{demand} / {supply}</span>
                   {gap !== 0 && (
                     <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-                      gap > 0 ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
+                      gap > 0
+                        ? "bg-neon-dark/10 text-neon-dark/70"
+                        : "bg-[#e8ff79]/30 text-neon-dark/50"
                     }`}>
                       {gap > 0 ? `+${gap} gap` : `${Math.abs(gap)} surplus`}
                     </span>
