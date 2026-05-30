@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 // Hardcoded fallback — always have access even if DB table doesn't exist yet
-const SUPER_ADMIN_EMAILS = ["rohan@neon.fund", "nansi@neon.fund"];
+const SUPER_ADMIN_EMAILS = ["rohan@neon.fund", "nansi@neon.fund", "shikhar@neon.fund"];
 const ALLOWED_DOMAIN = "neon.fund";
 
 export function getSupabaseAdmin() {

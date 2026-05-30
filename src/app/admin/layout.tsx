@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-const SUPER_ADMIN_EMAILS = ["rohan@neon.fund", "nansi@neon.fund"];
+const SUPER_ADMIN_EMAILS = ["rohan@neon.fund", "nansi@neon.fund", "shikhar@neon.fund"];
 const ALLOWED_DOMAIN = "neon.fund";
 
 export type AdminRole = "super_admin" | "viewer";
