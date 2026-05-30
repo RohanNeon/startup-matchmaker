@@ -13,6 +13,7 @@ interface EventData {
   name: string;
   event_date: string | null;
   location: string | null;
+  luma_url: string | null;
   is_active: boolean;
   created_at: string;
 }
@@ -479,9 +480,24 @@ export default function EventDashboard({
                 : "Date TBD"}
               {event.location && ` · ${event.location}`}
             </p>
-            <p className="text-xs text-neon-dark/25 mt-1 font-mono">
-              /event/{event.slug}
-            </p>
+            <div className="flex items-center gap-3 mt-1">
+              <p className="text-xs text-neon-dark/25 font-mono">
+                /event/{event.slug}
+              </p>
+              {event.luma_url && (
+                <a
+                  href={event.luma_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] text-neon-dark/30 hover:text-neon-dark/60 transition-colors"
+                >
+                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                  </svg>
+                  Luma
+                </a>
+              )}
+            </div>
           </div>
 
           {/* Status badge (non-admin) */}

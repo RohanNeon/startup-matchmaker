@@ -7,7 +7,7 @@ export async function GET() {
 
   const { data: events, error } = await supabaseAdmin
     .from("events")
-    .select("id, slug, name, event_date, location, is_active, image_url, created_at")
+    .select("id, slug, name, event_date, location, is_active, image_url, luma_url, created_at")
     .order("event_date", { ascending: false });
 
   if (error) {
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { slug, name, event_date, location, description, image_url } = body;
+  const { slug, name, event_date, location, description, image_url, luma_url } = body;
 
   if (!slug || !name) {
     return NextResponse.json(
@@ -39,6 +39,7 @@ export async function POST(request: Request) {
   const insertData: Record<string, unknown> = { slug, name, event_date, location };
   if (description) insertData.description = description;
   if (image_url) insertData.image_url = image_url;
+  if (luma_url) insertData.luma_url = luma_url;
 
   const { data, error } = await supabaseAdmin
     .from("events")
