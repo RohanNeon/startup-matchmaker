@@ -226,13 +226,16 @@ export default function AdminLayout({
                 href="https://lu.ma/create"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-[#ffffff]/40 hover:text-[#ffffff]/80 transition-colors px-2.5 py-1.5 rounded-md hover:bg-[#ffffff]/5"
+                className="flex items-center gap-1.5 text-xs text-[#ffffff]/50 hover:text-[#ffffff]/90 transition-colors px-2.5 py-1.5 rounded-md hover:bg-[#ffffff]/5"
                 title="Create event on Luma"
               >
-                <svg className="w-4 h-4" viewBox="0 0 120 120" fill="none">
-                  <rect width="120" height="120" rx="26" fill="currentColor" fillOpacity="0.25"/>
-                  <path d="M36 84V36h12v36h30v12H36z" fill="currentColor"/>
-                </svg>
+                <Image
+                  src="/luma-logo.png"
+                  alt="Luma"
+                  width={16}
+                  height={16}
+                  className="brightness-200"
+                />
                 <span className="hidden sm:inline">Luma</span>
               </a>
 
