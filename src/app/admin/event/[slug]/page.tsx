@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAdminUser } from "../../layout";
 
@@ -50,6 +51,7 @@ export default function EventDashboard({
   const { slug } = use(params);
   const adminUser = useAdminUser();
   const isSuperAdmin = adminUser?.role === "super_admin";
+  const router = useRouter();
 
   const [event, setEvent] = useState<EventData | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -340,13 +342,49 @@ export default function EventDashboard({
 
   async function handleToggleActive() {
     if (!event) return;
+    const newStatus = !event.is_active;
+    const action = newStatus ? "activate" : "close";
+    const confirmed = window.confirm(
+      `${action === "activate" ? "Reactivate" : "Close"} "${event.name}"?${
+        action === "close" ? "\n\nRegistration form will stop accepting new entries." : ""
+      }`
+    );
+    if (!confirmed) return;
+
     const { error: updateError } = await supabase
       .from("events")
-      .update({ is_active: !event.is_active })
+      .update({ is_active: newStatus })
       .eq("id", event.id);
 
     if (!updateError) {
-      setEvent({ ...event, is_active: !event.is_active });
+      setEvent({ ...event, is_active: newStatus });
+    }
+  }
+
+  async function handleDeleteEvent() {
+    if (!event) return;
+    const confirmed = window.confirm(
+      `⚠️ Delete "${event.name}"?\n\nThis will permanently delete the event and ALL related data (guest list, registrations, matches).\n\nThis cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    const doubleConfirm = window.confirm(
+      `Final confirmation: permanently delete "${event.name}" and all its data?`
+    );
+    if (!doubleConfirm) return;
+
+    const headers = await getAuthHeaders();
+    const res = await fetch("/api/events", {
+      method: "DELETE",
+      headers,
+      body: JSON.stringify({ eventId: event.id }),
+    });
+
+    if (res.ok) {
+      router.push("/admin");
+    } else {
+      const data = await res.json();
+      alert(`Failed to delete: ${data.error}`);
     }
   }
 
@@ -415,18 +453,9 @@ export default function EventDashboard({
               /event/{event.slug}
             </p>
           </div>
-          {isSuperAdmin ? (
-            <button
-              onClick={handleToggleActive}
-              className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
-                event.is_active
-                  ? "bg-green-50 text-green-700 hover:bg-green-100"
-                  : "bg-neon-dark/5 text-neon-dark/40 hover:bg-neon-dark/10"
-              }`}
-            >
-              {event.is_active ? "Active" : "Closed"}
-            </button>
-          ) : (
+
+          {/* Status badge (non-admin) */}
+          {!isSuperAdmin && (
             <span
               className={`text-xs px-3 py-1.5 rounded-full font-medium ${
                 event.is_active
@@ -436,6 +465,32 @@ export default function EventDashboard({
             >
               {event.is_active ? "Active" : "Closed"}
             </span>
+          )}
+
+          {/* Admin controls */}
+          {isSuperAdmin && (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={handleToggleActive}
+                className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors flex items-center gap-1.5 ${
+                  event.is_active
+                    ? "bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
+                    : "bg-neon-dark/5 text-neon-dark/40 hover:bg-neon-dark/10 border border-neon-dark/8"
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${event.is_active ? "bg-green-500" : "bg-neon-dark/20"}`} />
+                {event.is_active ? "Active" : "Closed"}
+              </button>
+              <button
+                onClick={handleDeleteEvent}
+                className="text-xs px-3 py-1.5 rounded-lg font-medium text-neon-dark/20 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors"
+                title="Delete event"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
           )}
         </div>
 
