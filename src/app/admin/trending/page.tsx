@@ -56,7 +56,7 @@ export default function TrendingPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-[#000000] tracking-tight">Trending Events</h1>
           <p className="text-sm text-[#1d3d0f]/50 mt-1">Upcoming AI, VC & startup events from Luma</p>
@@ -66,26 +66,38 @@ export default function TrendingPage() {
         </Link>
       </div>
 
-      {/* 3-column grid — one per region */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {/* Stacked regions with horizontal scroll cards */}
+      <div className="space-y-10">
         {regionIds.map((regionId) => {
           const region = regions[regionId];
           if (!region) return null;
 
           return (
-            <div key={regionId} className="bg-white rounded-xl border border-[#1d3d0f]/8 overflow-hidden">
+            <section key={regionId}>
               {/* Region header */}
-              <div className="px-4 py-3 bg-[#fdfff0] border-b border-[#1d3d0f]/6 flex items-center justify-between">
-                <h3 className="text-sm font-bold text-[#1d3d0f]">{region.label}</h3>
-                <span className="text-[10px] text-[#1d3d0f]/40">{region.events.length} events</span>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-bold text-[#000000]">{region.label}</h2>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#1d3d0f]/5 text-[#1d3d0f]/50 font-medium">
+                    {region.events.length} events
+                  </span>
+                </div>
+                <a
+                  href={LUMA_URLS[regionId] || "https://lu.ma/discover"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-[#1d3d0f]/50 hover:text-[#1d3d0f] transition-colors"
+                >
+                  View all on Luma →
+                </a>
               </div>
 
-              {/* Event list */}
+              {/* Horizontal scroll */}
               {region.events.length > 0 ? (
-                <div className="divide-y divide-[#1d3d0f]/5">
+                <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide" style={{ scrollbarWidth: "none" }}>
                   {region.events.map((event) => {
                     const date = new Date(event.start_at);
-                    const dayStr = date.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+                    const dayStr = date.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
                     const timeStr = date.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true });
 
                     return (
@@ -94,29 +106,44 @@ export default function TrendingPage() {
                         href={event.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex gap-3 p-3 hover:bg-[#e8ff79]/10 transition-colors group"
+                        className="flex-shrink-0 w-56 rounded-xl border border-[#1d3d0f]/8 bg-white overflow-hidden hover:border-[#1d3d0f]/20 hover:shadow-md transition-all group"
                       >
-                        <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-[#1d3d0f]/5 border border-[#1d3d0f]/6">
+                        {/* Cover */}
+                        <div className="w-full h-32 overflow-hidden bg-[#1d3d0f]/5">
                           {event.cover_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={event.cover_url} alt="" className="w-full h-full object-cover" />
+                            <img
+                              src={event.cover_url}
+                              alt=""
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
                           ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-[#1d3d0f]/5 to-[#e8ff79]/20 flex items-center justify-center">
-                              <svg className="w-4 h-4 text-[#1d3d0f]/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <div className="w-full h-full bg-gradient-to-br from-[#fdfff0] to-[#e8ff79]/20 flex items-center justify-center">
+                              <svg className="w-8 h-8 text-[#1d3d0f]/15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                               </svg>
                             </div>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0 py-0.5">
-                          <p className="text-[12px] font-semibold text-[#1d3d0f] leading-snug line-clamp-2 group-hover:text-[#000000]">
+
+                        {/* Details */}
+                        <div className="p-3">
+                          <p className="text-[13px] font-semibold text-[#1d3d0f] leading-snug line-clamp-2 group-hover:text-[#000000] min-h-[2.5rem]">
                             {event.name}
                           </p>
-                          <p className="text-[10px] text-[#1d3d0f]/50 mt-1.5 truncate">
-                            {dayStr}, {timeStr}
-                          </p>
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <svg className="w-3 h-3 text-[#1d3d0f]/35 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="text-[11px] text-[#1d3d0f]/55">{dayStr}, {timeStr}</span>
+                          </div>
                           {event.host_name && (
-                            <p className="text-[10px] text-[#1d3d0f]/40 truncate">{event.host_name}</p>
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <svg className="w-3 h-3 text-[#1d3d0f]/35 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
+                              </svg>
+                              <span className="text-[11px] text-[#1d3d0f]/50 truncate">{event.host_name}</span>
+                            </div>
                           )}
                         </div>
                       </a>
@@ -124,28 +151,18 @@ export default function TrendingPage() {
                   })}
                 </div>
               ) : (
-                <div className="py-8 text-center">
-                  <p className="text-xs text-[#1d3d0f]/40">No trending events</p>
+                <div className="py-8 text-center bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8">
+                  <p className="text-xs text-[#1d3d0f]/40">No trending events in {region.label}</p>
                 </div>
               )}
 
-              {/* Footer */}
-              <div className="flex items-center justify-between px-4 py-2.5 border-t border-[#1d3d0f]/5 bg-[#fdfff0]">
-                {region.updated_at && (
-                  <span className="text-[8px] text-[#1d3d0f]/35">
-                    Updated {new Date(region.updated_at).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true })}
-                  </span>
-                )}
-                <a
-                  href={LUMA_URLS[regionId] || "https://lu.ma/discover"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[10px] text-[#1d3d0f]/50 hover:text-[#1d3d0f] transition-colors"
-                >
-                  View all on Luma
-                </a>
-              </div>
-            </div>
+              {/* Updated timestamp */}
+              {region.updated_at && (
+                <p className="text-[9px] text-[#1d3d0f]/30 mt-2">
+                  Updated {new Date(region.updated_at).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true })}
+                </p>
+              )}
+            </section>
           );
         })}
       </div>
