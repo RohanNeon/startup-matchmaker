@@ -102,7 +102,7 @@ function buildEmailHtml(
           ${episodes.slice(0, 3).map((ep, i) => `
           <td class="video-cell" style="width: 33%; padding: 0 ${i === 0 ? '4px 0 0' : i === 2 ? '0 0 4px' : '4px'}; vertical-align: top;">
             <a href="${ep.link}" style="text-decoration: none;">
-              <img src="https://img.youtube.com/vi/${ep.youtube_id}/maxresdefault.jpg" alt="${ep.title}" width="100%" style="border-radius: 8px; display: block;" />
+              <img src="https://img.youtube.com/vi/${ep.youtube_id}/maxresdefault.jpg" alt="Podcast" width="100%" style="border-radius: 8px; display: block;" />
             </a>
           </td>`).join("")}
         </tr>
