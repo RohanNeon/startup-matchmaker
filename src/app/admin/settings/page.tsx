@@ -180,7 +180,7 @@ export default function SettingsPage() {
   if (!adminUser || adminUser.role !== "super_admin") {
     return (
       <div className="flex items-center justify-center py-32">
-        <Image src="/neon-logo.png" alt="Loading" width={36} height={36} className="animate-logo-pulse rounded-lg" />
+        <div className="neon-loader" />
       </div>
     );
   }
@@ -217,7 +217,7 @@ export default function SettingsPage() {
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <Image src="/neon-logo.png" alt="Loading" width={28} height={28} className="animate-logo-pulse rounded" />
+            <div className="neon-loader" />
           </div>
         ) : (
           <div className="bg-[#ffffff] rounded-2xl border border-[#1d3d0f]/8 overflow-hidden divide-y divide-[#1d3d0f]/5">

@@ -59,7 +59,7 @@ export default function TrendingPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <Image src="/neon-logo.png" alt="Loading" width={36} height={36} className="animate-logo-pulse rounded-lg" />
+        <div className="neon-loader" />
       </div>
     );
   }

@@ -8,13 +8,26 @@
   --color-neon-hover: #d4eb65;
 }
 
-@keyframes logo-loader {
-  0% { opacity: 0.15; transform: scale(0.92); filter: grayscale(100%); }
-  50% { opacity: 1; transform: scale(1); filter: grayscale(0%); }
-  100% { opacity: 0.15; transform: scale(0.92); filter: grayscale(100%); }
+@keyframes neon-bar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
 }
 
-.animate-logo-pulse {
-  animation: logo-loader 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  filter: drop-shadow(0 0 8px rgba(232, 255, 121, 0.4));
+.neon-loader {
+  width: 48px;
+  height: 3px;
+  background: #1d3d0f0d;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.neon-loader::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 60%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1d3d0f, #e8ff79);
+  animation: neon-bar 1.2s ease-in-out infinite;
 }

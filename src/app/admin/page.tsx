@@ -449,7 +449,7 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <Image src="/neon-logo.png" alt="Loading" width={36} height={36} className="animate-logo-pulse rounded-lg" />
+        <div className="neon-loader" />
       </div>
     );
   }
@@ -1432,7 +1432,7 @@ function TrendingEvents() {
         </h3>
         <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-4">
           <div className="flex items-center justify-center py-6">
-            <Image src="/neon-logo.png" alt="Loading" width={24} height={24} className="animate-logo-pulse rounded" />
+            <div className="neon-loader" />
           </div>
         </div>
       </div>
