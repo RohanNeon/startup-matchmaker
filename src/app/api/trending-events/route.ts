@@ -120,6 +120,14 @@ export async function GET() {
     }
   }
 
+  // Filter out events older than 7 days from all results
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  for (const regionId of Object.keys(result)) {
+    result[regionId].events = result[regionId].events.filter(
+      (ev) => ev.start_at > sevenDaysAgo
+    );
+  }
+
   return NextResponse.json({
     regions: Object.fromEntries(
       Object.entries(REGIONS).map(([id, geo]) => [
