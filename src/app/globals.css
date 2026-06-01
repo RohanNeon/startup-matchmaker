@@ -7,3 +7,12 @@
   --color-neon-bg: #fdfff0;
   --color-neon-hover: #d4eb65;
 }
+
+@keyframes logo-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+.animate-logo-pulse {
+  animation: logo-pulse 1.6s ease-in-out infinite;
+}

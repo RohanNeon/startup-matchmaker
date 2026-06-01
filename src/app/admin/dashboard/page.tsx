@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -68,7 +69,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <div className="w-5 h-5 border-2 border-[#1d3d0f]/30 border-t-[#1d3d0f] rounded-full animate-spin" />
+        <Image src="/neon-logo.png" alt="Loading" width={36} height={36} className="animate-logo-pulse rounded-lg" />
       </div>
     );
   }

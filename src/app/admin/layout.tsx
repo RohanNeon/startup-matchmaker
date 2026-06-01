@@ -132,7 +132,7 @@ export default function AdminLayout({
   if (loading) {
     return (
       <div className="min-h-screen bg-[#ffffff] flex items-center justify-center">
-        <div className="w-5 h-5 border-2 border-[#1d3d0f]/30 border-t-[#1d3d0f] rounded-full animate-spin" />
+        <Image src="/neon-logo.png" alt="Loading" width={40} height={40} className="animate-logo-pulse rounded-lg" />
       </div>
     );
   }

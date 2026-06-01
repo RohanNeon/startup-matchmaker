@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAdminUser } from "../layout";
@@ -179,7 +180,7 @@ export default function SettingsPage() {
   if (!adminUser || adminUser.role !== "super_admin") {
     return (
       <div className="flex items-center justify-center py-32">
-        <div className="w-5 h-5 border-2 border-[#1d3d0f]/30 border-t-[#1d3d0f] rounded-full animate-spin" />
+        <Image src="/neon-logo.png" alt="Loading" width={36} height={36} className="animate-logo-pulse rounded-lg" />
       </div>
     );
   }
@@ -216,7 +217,7 @@ export default function SettingsPage() {
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="w-4 h-4 border-2 border-[#1d3d0f]/30 border-t-[#1d3d0f] rounded-full animate-spin" />
+            <Image src="/neon-logo.png" alt="Loading" width={28} height={28} className="animate-logo-pulse rounded" />
           </div>
         ) : (
           <div className="bg-[#ffffff] rounded-2xl border border-[#1d3d0f]/8 overflow-hidden divide-y divide-[#1d3d0f]/5">

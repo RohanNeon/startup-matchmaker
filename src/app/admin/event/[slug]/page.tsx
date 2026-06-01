@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
 import { supabase } from "@/lib/supabase";
@@ -394,7 +395,7 @@ export default function EventDashboard({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-6 h-6 border-2 border-neon-dark border-t-transparent rounded-full animate-spin" />
+        <Image src="/neon-logo.png" alt="Loading" width={36} height={36} className="animate-logo-pulse rounded-lg" />
       </div>
     );
   }
