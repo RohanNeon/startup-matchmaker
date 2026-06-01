@@ -1419,7 +1419,7 @@ function TrendingEvents() {
 
       {/* Scrollable container */}
       <div className="rounded-xl border border-[#1d3d0f]/8 overflow-hidden bg-[#fdfff0]">
-        <div className="max-h-[420px] overflow-y-auto space-y-2 p-2.5">
+        <div className="max-h-[480px] overflow-y-auto divide-y divide-[#1d3d0f]/5">
           {events.map((event) => {
             const date = new Date(event.start_at);
             const dayStr = date.toLocaleDateString("en-IN", {
@@ -1438,56 +1438,42 @@ function TrendingEvents() {
                 href={event.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block rounded-lg overflow-hidden border border-[#1d3d0f]/6 hover:border-[#1d3d0f]/15 bg-white transition-all group hover:shadow-sm"
+                className="flex gap-3 p-2.5 hover:bg-[#e8ff79]/10 transition-colors group"
               >
-                {/* Cover image */}
-                {event.cover_url ? (
-                  <div className="w-full h-24 overflow-hidden bg-[#1d3d0f]/5">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                {/* Square cover image */}
+                <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-[#1d3d0f]/5 border border-[#1d3d0f]/6">
+                  {event.cover_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={event.cover_url}
                       alt=""
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover"
                     />
-                  </div>
-                ) : (
-                  <div className="w-full h-16 bg-gradient-to-br from-[#1d3d0f]/5 to-[#e8ff79]/20 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-[#1d3d0f]/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                    </svg>
-                  </div>
-                )}
-
-                {/* Event details */}
-                <div className="p-2.5">
-                  <p className="text-[12px] font-semibold text-[#1d3d0f] leading-snug line-clamp-2 group-hover:text-[#000000]">
-                    {event.name}
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <svg className="w-3 h-3 text-[#1d3d0f]/35 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-[10px] text-[#1d3d0f]/55">
-                      {dayStr}, {timeStr}
-                    </span>
-                  </div>
-                  {event.host_name && (
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <svg className="w-3 h-3 text-[#1d3d0f]/35 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-[#1d3d0f]/5 to-[#e8ff79]/20 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-[#1d3d0f]/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                       </svg>
-                      <span className="text-[10px] text-[#1d3d0f]/55 truncate">
-                        {event.host_name}
-                      </span>
                     </div>
                   )}
+                </div>
+
+                {/* Event details */}
+                <div className="flex-1 min-w-0 py-0.5">
+                  <p className="text-[11px] font-semibold text-[#1d3d0f] leading-snug line-clamp-2 group-hover:text-[#000000]">
+                    {event.name}
+                  </p>
+                  <p className="text-[10px] text-[#1d3d0f]/50 mt-1 truncate">
+                    {dayStr}, {timeStr}
+                    {event.host_name && ` · ${event.host_name}`}
+                  </p>
                 </div>
               </a>
             );
           })}
         </div>
 
-        {/* Footer inside the card */}
+        {/* Footer */}
         <div className="flex items-center justify-between px-3 py-2 border-t border-[#1d3d0f]/5 bg-[#fdfff0]">
           {lastUpdated && (
             <span className="text-[8px] text-[#1d3d0f]/35">
