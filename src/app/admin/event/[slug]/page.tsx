@@ -1636,22 +1636,40 @@ function EmailsTab({
   const [savingEpisodes, setSavingEpisodes] = useState(false);
   const [episodeSaved, setEpisodeSaved] = useState(false);
 
+  // Store YouTube URLs for display, extract IDs on save
+  const [ytUrls, setYtUrls] = useState<string[]>(
+    (event.podcast_episodes || []).map((ep) =>
+      ep.youtube_id ? `https://youtube.com/watch?v=${ep.youtube_id}` : ""
+    )
+  );
+
+  function extractYoutubeId(url: string): string {
+    const match = url.match(/(?:v=|youtu\.be\/|\/embed\/|\/shorts\/)([a-zA-Z0-9_-]{11})/);
+    return match ? match[1] : "";
+  }
+
   function addEpisode() {
     setEpisodes([...episodes, { title: "", youtube_id: "", link: "" }]);
+    setYtUrls([...ytUrls, ""]);
   }
 
   function removeEpisode(index: number) {
     setEpisodes(episodes.filter((_, i) => i !== index));
+    setYtUrls(ytUrls.filter((_, i) => i !== index));
   }
 
-  function updateEpisode(index: number, field: keyof PodcastEpisode, value: string) {
+  function updateYtUrl(index: number, value: string) {
+    const newUrls = [...ytUrls];
+    newUrls[index] = value;
+    setYtUrls(newUrls);
     const updated = [...episodes];
-    updated[index] = { ...updated[index], [field]: value };
-    // Auto-extract YouTube ID from URL
-    if (field === "youtube_id" && value.includes("youtube.com") || field === "youtube_id" && value.includes("youtu.be")) {
-      const match = value.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-      if (match) updated[index].youtube_id = match[1];
-    }
+    updated[index] = { ...updated[index], youtube_id: extractYoutubeId(value) };
+    setEpisodes(updated);
+  }
+
+  function updateLink(index: number, value: string) {
+    const updated = [...episodes];
+    updated[index] = { ...updated[index], link: value };
     setEpisodes(updated);
   }
 
@@ -1693,30 +1711,36 @@ function EmailsTab({
         </div>
 
         {episodes.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {episodes.map((ep, i) => (
-              <div key={i} className="flex gap-2 items-center">
+              <div key={i} className="flex gap-2.5 items-center">
                 {/* Thumbnail preview */}
-                {ep.youtube_id && (
-                  <div className="w-14 h-10 rounded overflow-hidden bg-neon-dark/5 flex-shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                <div className="w-16 h-11 rounded-md overflow-hidden bg-neon-dark/5 flex-shrink-0 border border-neon-dark/6">
+                  {ep.youtube_id ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={`https://img.youtube.com/vi/${ep.youtube_id}/mqdefault.jpg`} alt="" className="w-full h-full object-cover" />
-                  </div>
-                )}
-                <input
-                  type="text"
-                  value={ep.youtube_id}
-                  onChange={(e) => updateEpisode(i, "youtube_id", e.target.value)}
-                  placeholder="YouTube video ID"
-                  className="w-36 text-xs px-2.5 py-1.5 rounded-md border border-neon-dark/10 bg-white outline-none focus:ring-1 focus:ring-neon-dark/20 font-mono"
-                />
-                <input
-                  type="text"
-                  value={ep.link}
-                  onChange={(e) => updateEpisode(i, "link", e.target.value)}
-                  placeholder="be.neon.fund/..."
-                  className="flex-1 text-xs px-2.5 py-1.5 rounded-md border border-neon-dark/10 bg-white outline-none focus:ring-1 focus:ring-neon-dark/20"
-                />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-neon-dark/15">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" /></svg>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 flex gap-2 min-w-0">
+                  <input
+                    type="text"
+                    value={ytUrls[i] || ""}
+                    onChange={(e) => updateYtUrl(i, e.target.value)}
+                    placeholder="YouTube link"
+                    className="flex-1 text-xs px-2.5 py-1.5 rounded-md border border-neon-dark/10 bg-white outline-none focus:ring-1 focus:ring-neon-dark/20"
+                  />
+                  <input
+                    type="text"
+                    value={ep.link}
+                    onChange={(e) => updateLink(i, e.target.value)}
+                    placeholder="Tracking link (be.neon.fund/...)"
+                    className="flex-1 text-xs px-2.5 py-1.5 rounded-md border border-neon-dark/10 bg-white outline-none focus:ring-1 focus:ring-neon-dark/20"
+                  />
+                </div>
                 <button onClick={() => removeEpisode(i)} className="p-1 text-neon-dark/20 hover:text-red-500 transition-colors">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
