@@ -925,13 +925,16 @@ export default function AdminPage() {
 
       </div>
 
-      {/* ── Right sidebar — Calendar ── */}
+      {/* ── Right sidebar — Calendar + Trending ── */}
       <aside className="hidden lg:block w-72 flex-shrink-0">
-        <div className="sticky top-20">
-          <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
-            Calendar
-          </h3>
-          <EventCalendar events={events} />
+        <div className="sticky top-20 space-y-6">
+          <div>
+            <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
+              Calendar
+            </h3>
+            <EventCalendar events={events} />
+          </div>
+          <TrendingEvents />
         </div>
       </aside>
     </div>
@@ -1336,6 +1339,166 @@ function EventCard({
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+
+/* ─── Trending Events ─── */
+
+interface TrendingEventData {
+  id: string;
+  name: string;
+  url: string;
+  start_at: string;
+  city: string | null;
+  host_name: string | null;
+  host_avatar: string | null;
+  cover_url: string | null;
+}
+
+function TrendingEvents() {
+  const [events, setEvents] = useState<TrendingEventData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchTrending();
+  }, []);
+
+  async function fetchTrending() {
+    try {
+      const res = await fetch("/api/trending-events");
+      const data = await res.json();
+      setEvents(data.events || []);
+      setLastUpdated(data.updated_at || null);
+    } catch {
+      // Silently fail — trending is non-critical
+    }
+    setLoading(false);
+  }
+
+  if (loading) {
+    return (
+      <div>
+        <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
+          Trending Events
+        </h3>
+        <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-4">
+          <div className="flex items-center justify-center py-6">
+            <div className="w-4 h-4 border-2 border-[#1d3d0f]/20 border-t-[#1d3d0f] rounded-full animate-spin" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (events.length === 0) {
+    return (
+      <div>
+        <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
+          Trending Events
+        </h3>
+        <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-4">
+          <p className="text-xs text-[#1d3d0f]/50 text-center py-4">
+            No trending events found
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider">
+          Trending Events
+        </h3>
+        <span className="text-[9px] text-[#1d3d0f]/40">Bangalore</span>
+      </div>
+
+      <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 divide-y divide-[#1d3d0f]/5 overflow-hidden">
+        {events.map((event) => {
+          const date = new Date(event.start_at);
+          const dayStr = date.toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
+          });
+          const timeStr = date.toLocaleTimeString("en-IN", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          });
+
+          return (
+            <a
+              key={event.id}
+              href={event.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex gap-3 p-3 hover:bg-[#e8ff79]/10 transition-colors group"
+            >
+              {/* Date badge */}
+              <div className="w-10 h-10 rounded-lg bg-white border border-[#1d3d0f]/8 flex flex-col items-center justify-center flex-shrink-0">
+                <span className="text-[10px] font-bold text-[#1d3d0f] leading-none">
+                  {date.getDate()}
+                </span>
+                <span className="text-[8px] text-[#1d3d0f]/50 uppercase leading-none mt-0.5">
+                  {date.toLocaleDateString("en-IN", { month: "short" })}
+                </span>
+              </div>
+
+              {/* Event info */}
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-semibold text-[#1d3d0f] leading-tight line-clamp-2 group-hover:text-[#000000]">
+                  {event.name}
+                </p>
+                <div className="flex items-center gap-1 mt-1">
+                  {event.host_name && (
+                    <span className="text-[9px] text-[#1d3d0f]/55 truncate">
+                      {event.host_name}
+                    </span>
+                  )}
+                  {event.host_name && (
+                    <span className="text-[#1d3d0f]/30">·</span>
+                  )}
+                  <span className="text-[9px] text-[#1d3d0f]/55 flex-shrink-0">
+                    {dayStr}, {timeStr}
+                  </span>
+                </div>
+              </div>
+
+              {/* External link arrow */}
+              <div className="flex items-start pt-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <svg className="w-3 h-3 text-[#1d3d0f]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                </svg>
+              </div>
+            </a>
+          );
+        })}
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between mt-2 px-1">
+        {lastUpdated && (
+          <span className="text-[8px] text-[#1d3d0f]/35">
+            Updated {new Date(lastUpdated).toLocaleTimeString("en-IN", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })}
+          </span>
+        )}
+        <a
+          href="https://lu.ma/discover?geo=Bengaluru"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[9px] text-[#1d3d0f]/50 hover:text-[#1d3d0f] transition-colors"
+        >
+          View all on Luma
+        </a>
+      </div>
     </div>
   );
 }
