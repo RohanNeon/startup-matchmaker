@@ -8,6 +8,12 @@ import * as XLSX from "xlsx";
 import { supabase } from "@/lib/supabase";
 import { useAdminUser } from "../../layout";
 
+interface PodcastEpisode {
+  title: string;
+  youtube_id: string;
+  link: string;
+}
+
 interface EventData {
   id: string;
   slug: string;
@@ -17,6 +23,7 @@ interface EventData {
   luma_url: string | null;
   is_active: boolean;
   created_at: string;
+  podcast_episodes: PodcastEpisode[] | null;
 }
 
 interface Participant {
@@ -1625,8 +1632,136 @@ function EmailsTab({
   const matchesExist = matches.length > 0;
   const uniqueRecipients = new Set(matches.map((m) => m.profile_email)).size;
 
+  const [episodes, setEpisodes] = useState<PodcastEpisode[]>(event.podcast_episodes || []);
+  const [savingEpisodes, setSavingEpisodes] = useState(false);
+  const [episodeSaved, setEpisodeSaved] = useState(false);
+
+  function addEpisode() {
+    setEpisodes([...episodes, { title: "", youtube_id: "", link: "" }]);
+  }
+
+  function removeEpisode(index: number) {
+    setEpisodes(episodes.filter((_, i) => i !== index));
+  }
+
+  function updateEpisode(index: number, field: keyof PodcastEpisode, value: string) {
+    const updated = [...episodes];
+    updated[index] = { ...updated[index], [field]: value };
+    // Auto-extract YouTube ID from URL
+    if (field === "youtube_id" && value.includes("youtube.com") || field === "youtube_id" && value.includes("youtu.be")) {
+      const match = value.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+      if (match) updated[index].youtube_id = match[1];
+    }
+    setEpisodes(updated);
+  }
+
+  async function saveEpisodes() {
+    setSavingEpisodes(true);
+    setEpisodeSaved(false);
+    const { error } = await supabase
+      .from("events")
+      .update({ podcast_episodes: episodes.filter((ep) => ep.youtube_id && ep.link) })
+      .eq("id", event.id);
+    if (!error) {
+      setEpisodeSaved(true);
+      setTimeout(() => setEpisodeSaved(false), 3000);
+    }
+    setSavingEpisodes(false);
+  }
+
   return (
     <div className="divide-y divide-neon-dark/8">
+      {/* Podcast Episodes */}
+      <div className="p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3 className="text-sm font-semibold text-neon-dark">Podcast Episodes</h3>
+            <p className="text-xs text-neon-dark/50 mt-0.5">These appear at the bottom of match emails. Max 3 episodes.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {episodeSaved && (
+              <span className="text-xs text-neon-dark/60">Saved</span>
+            )}
+            <button
+              onClick={saveEpisodes}
+              disabled={savingEpisodes}
+              className="px-3 py-1.5 bg-neon-dark/5 text-neon-dark/70 border border-neon-dark/10 rounded-lg text-xs font-medium hover:bg-neon-dark/8 transition-colors disabled:opacity-50"
+            >
+              {savingEpisodes ? "Saving..." : "Save Episodes"}
+            </button>
+          </div>
+        </div>
+
+        {episodes.length > 0 ? (
+          <div className="space-y-3">
+            {episodes.map((ep, i) => (
+              <div key={i} className="flex gap-3 items-start p-3 bg-neon-bg/50 rounded-lg border border-neon-dark/5">
+                {/* Thumbnail preview */}
+                <div className="w-20 h-14 rounded-md overflow-hidden bg-neon-dark/5 flex-shrink-0">
+                  {ep.youtube_id ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`https://img.youtube.com/vi/${ep.youtube_id}/mqdefault.jpg`}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-neon-dark/20">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" /></svg>
+                    </div>
+                  )}
+                </div>
+                {/* Fields */}
+                <div className="flex-1 space-y-1.5 min-w-0">
+                  <input
+                    type="text"
+                    value={ep.title}
+                    onChange={(e) => updateEpisode(i, "title", e.target.value)}
+                    placeholder="Episode title (e.g. Rohit Agarwal)"
+                    className="w-full text-xs px-2.5 py-1.5 rounded-md border border-neon-dark/10 bg-white outline-none focus:ring-1 focus:ring-neon-dark/20"
+                  />
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      value={ep.youtube_id}
+                      onChange={(e) => updateEpisode(i, "youtube_id", e.target.value)}
+                      placeholder="YouTube ID or URL"
+                      className="flex-1 text-xs px-2.5 py-1.5 rounded-md border border-neon-dark/10 bg-white outline-none focus:ring-1 focus:ring-neon-dark/20 font-mono"
+                    />
+                    <input
+                      type="text"
+                      value={ep.link}
+                      onChange={(e) => updateEpisode(i, "link", e.target.value)}
+                      placeholder="Tracking link (be.neon.fund/...)"
+                      className="flex-1 text-xs px-2.5 py-1.5 rounded-md border border-neon-dark/10 bg-white outline-none focus:ring-1 focus:ring-neon-dark/20"
+                    />
+                  </div>
+                </div>
+                {/* Remove */}
+                <button
+                  onClick={() => removeEpisode(i)}
+                  className="p-1 text-neon-dark/25 hover:text-red-500 transition-colors mt-1"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-neon-dark/40 py-2">No episodes added. Emails will be sent without the podcast section.</p>
+        )}
+
+        {episodes.length < 3 && (
+          <button
+            onClick={addEpisode}
+            className="mt-3 text-xs text-neon-dark/50 hover:text-neon-dark transition-colors flex items-center gap-1"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            Add episode
+          </button>
+        )}
+      </div>
+
       {/* Step 1: Run MatchUp */}
       <div className="p-5">
         <div className="flex items-start gap-3">

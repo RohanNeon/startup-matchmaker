@@ -31,10 +31,17 @@ interface StoredMatch {
   linkedin_url: string | null;
 }
 
+interface PodcastEpisode {
+  title: string;
+  youtube_id: string;
+  link: string;
+}
+
 function buildEmailHtml(
   recipientName: string,
   eventName: string,
-  matches: { profile: Profile; linkedin: string | null; rank: number }[]
+  matches: { profile: Profile; linkedin: string | null; rank: number }[],
+  episodes?: PodcastEpisode[]
 ): string {
   const matchRows = matches
     .map((m) => {
@@ -86,29 +93,21 @@ function buildEmailHtml(
         ${matchRows}
       </table>
     </div>
+    ${episodes && episodes.length > 0 ? `
     <div style="background: #ffffff; border-radius: 16px; padding: 24px; border: 1px solid rgba(29,61,15,0.1); margin-top: 20px;">
       <p style="color: #1d3d0f; font-size: 14px; font-weight: 600; margin: 0 0 4px;">While you wait to connect...</p>
       <p style="color: #1d3d0f99; font-size: 13px; margin: 0 0 16px;">Hear from founders who've been in your shoes.</p>
       <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
         <tr>
-          <td class="video-cell" style="width: 33%; padding: 0 4px 0 0; vertical-align: top;">
-            <a href="https://be.neon.fund/manish-cyber-sec-event-matchmaila" style="text-decoration: none;">
-              <img src="https://img.youtube.com/vi/CIJ1opoj2gQ/maxresdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
+          ${episodes.slice(0, 3).map((ep, i) => `
+          <td class="video-cell" style="width: 33%; padding: 0 ${i === 0 ? '4px 0 0' : i === 2 ? '0 0 4px' : '4px'}; vertical-align: top;">
+            <a href="${ep.link}" style="text-decoration: none;">
+              <img src="https://img.youtube.com/vi/${ep.youtube_id}/maxresdefault.jpg" alt="${ep.title}" width="100%" style="border-radius: 8px; display: block;" />
             </a>
-          </td>
-          <td class="video-cell" style="width: 33%; padding: 0 4px; vertical-align: top;">
-            <a href="https://be.neon.fund/Animesh-cybersec-event-matchmail" style="text-decoration: none;">
-              <img src="https://img.youtube.com/vi/SuArGOEDi6c/maxresdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
-            </a>
-          </td>
-          <td class="video-cell" style="width: 33%; padding: 0 0 0 4px; vertical-align: top;">
-            <a href="https://be.neon.fund/sudheesh-cybersec-matchmail" style="text-decoration: none;">
-              <img src="https://img.youtube.com/vi/Ddgxkr-C_30/maxresdefault.jpg" alt="Podcast episode" width="100%" style="border-radius: 8px; display: block;" />
-            </a>
-          </td>
+          </td>`).join("")}
         </tr>
       </table>
-    </div>
+    </div>` : ""}
     <p style="text-align: center; color: #1d3d0f40; font-size: 12px; margin-top: 24px;">
       &copy; Neon Fund | Startup Matchmaker
     </p>
@@ -155,7 +154,7 @@ export async function POST(request: Request) {
   // Verify event exists
   const { data: event } = await supabaseAdmin
     .from("events")
-    .select("id, slug, name")
+    .select("id, slug, name, podcast_episodes")
     .eq("id", eventId)
     .single();
 
@@ -244,7 +243,8 @@ export async function POST(request: Request) {
       continue;
     }
 
-    const html = buildEmailHtml(recipient.name, event.name, enrichedMatches);
+    const episodes = (event.podcast_episodes as PodcastEpisode[] | null) || [];
+    const html = buildEmailHtml(recipient.name, event.name, enrichedMatches, episodes);
 
     try {
       await transporter.sendMail({
