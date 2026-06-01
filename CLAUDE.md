@@ -55,6 +55,11 @@ Logo: `public/neon-logo.png` (also `.svg`). Lime-green "N" mark. PNG has RGBA tr
 - linkedin_url (text)
 - created_at (timestamptz)
 
+### `trending_events_cache` table
+- id (text, PK) - cache key, e.g. "bangalore"
+- events (jsonb) - array of trending event objects from Luma
+- updated_at (timestamptz) - last refresh time
+
 ## Match algorithm
 Mutual benefit scoring system:
 - A's looking_for matches B's can_offer = 3 points per overlap
@@ -83,6 +88,8 @@ Mutual benefit scoring system:
 - `POST /api/send-matches` - legacy endpoint
 - `POST /api/trigger-my-matches` - legacy single-person trigger
 - `POST /api/chat` - Groq LLM chat (future use)
+- `GET /api/trending-events` - returns cached trending Luma events (auto-refreshes if stale)
+- `POST /api/trending-events` - force-refresh trending events cache from Luma
 
 ## Two-step auth
 1. **Email validation (pre-submit):** On email input blur, check against `luma_list` in real-time
@@ -103,6 +110,11 @@ src/
 │   ├── api/compute-matches/route.ts    # POST - compute & store matches
 │   ├── api/send-match-emails/route.ts  # POST - send match emails (with targetEmail filter)
 │   ├── api/trigger-my-matches/route.ts # POST - legacy single trigger
+│   ├── api/trending-events/route.ts   # GET/POST - Luma trending events feed
+│   ├── admin/page.tsx                 # Admin dashboard with metrics, events, trending
+│   ├── admin/layout.tsx               # Admin layout with auth, header, navigation
+│   ├── admin/settings/page.tsx        # Admin settings (manage admins)
+│   ├── admin/event/[slug]/page.tsx    # Per-event dashboard (participants, guests, matches, emails)
 ├── components/
 │   ├── OnboardingForm.tsx              # Profile form with email validation + OTP
 │   ├── WaitingScreen.tsx               # Post-submission waiting screen
@@ -194,6 +206,20 @@ src/
 - [x] Old URL redirects to new
 - [x] Header with Neon logo + "Startup Matchmaker" text side by side
 - [x] First event completed (March 21, 2026)
+- [x] Multi-event support (events table, event_id foreign keys)
+- [x] Second event: Cybersecurity AI (May 28, 2026)
+- [x] Admin dashboard with Google OAuth (@neon.fund domain lock)
+- [x] Admin role system (super_admin vs viewer, hardcoded + dynamic admins table)
+- [x] Dashboard metrics (total events, guests, registered, matchups, conversion, repeat attendees)
+- [x] Event calendar in sidebar
+- [x] Trending events feed from Luma (auto-refresh 8am + 5pm IST via Vercel cron)
+- [x] Per-event dashboard with 5 tabs (Registered, Guest List, Check-ins, MatchUp, Email Controls)
+- [x] CSV + Excel guest list upload (drag & drop, SheetJS parsing)
+- [x] Luma import for event creation (fetch event details from Luma URL)
+- [x] Luma links on events (header "+ Create on Luma", per-event Luma page links)
+- [x] Admin settings page (manage admin users via OTP)
+- [x] Font contrast fixed across all admin pages (min /40 opacity on white)
+- [x] Brand-only color system enforced (no red/green/blue, only #1d3d0f opacity variants)
 
 ## Key decisions
 1. **v2 pivot:** Replaced live chat with email-based match delivery
@@ -520,23 +546,45 @@ src/
 - Form options: Looking for (Capital, Co-founder, Customers, Talent, Peers, Startups), Can offer (Capital, Co-founder, Customers, Talent, Peers)
 - Podcast links in match email: Manish, Animesh, Sudheesh (be.neon.fund tracking URLs)
 
-## Admin Dashboard (in progress)
+## Admin Dashboard
 
 ### Architecture
-- **Route**: `/admin` (protected with ADMIN_PASSWORD env var)
-- **Auth**: Simple password check, stored in cookie/session
+- **Route**: `/admin` (protected with Google OAuth, @neon.fund domain only)
+- **Auth**: Supabase Google OAuth + role-based access (super_admin vs viewer)
+- **Super admins**: Hardcoded list (`rohan@neon.fund`, `nansi@neon.fund`, `shikhar@neon.fund`) + dynamic `admins` table
 - **Features**:
-  1. Event list — all events with registration counts
-  2. Create new event — name, slug, date, location
-  3. Per-event view — live participant table, match controls
-  4. CSV upload — drag & drop Luma CSV
-  5. Match controls — compute, dry run, send to one, send all (with guardrails)
-  6. Email scheduling — set send time per event
-  7. Send log — audit trail of every email sent
+  1. Dashboard metrics — total events, guests, registered, matchups, conversion, repeat attendees
+  2. Event calendar — mini calendar showing event dates
+  3. Trending events — Luma-powered feed of upcoming AI/VC/startup events in Bangalore
+  4. Event list — all events with stats, Luma links, image thumbnails
+  5. Create event — import from Luma URL or manual entry, CSV/Excel guest upload
+  6. Per-event view — 5 tabs: Registered, Guest List, Check-ins, MatchUp, Email Controls
+  7. Settings — manage admin users (add/remove via OTP verification)
+
+### Admin pages
+- `/admin` — dashboard with metrics, calendar, trending events, event list, create event
+- `/admin/event/[slug]` — per-event dashboard (5-tab layout: participants, guests, check-ins, matches, emails)
+- `/admin/settings` — manage admin users (super_admin only)
+
+### Trending Events (Luma integration)
+- API: `/api/trending-events` fetches from Luma discover API for Bangalore
+- Filters by 35+ keywords: AI, startup, founder, VC, venture, agentic, SaaS, hackathon, deeptech, etc.
+- Cached in `trending_events_cache` table (6hr TTL)
+- Auto-refreshes via Vercel cron at 8am and 5pm IST (`vercel.json`)
+- UI: sidebar section below calendar, shows date badge + event name + host + time
+- Links open Luma event page in new tab
+
+### Luma integration
+- Header: "+ Create on Luma" button links to `https://lu.ma/create`
+- Per-event: "Luma" link in event header (stored in `events.luma_url` column)
+- Event logos: `public/luma-logo.png` (512x512 Luma sparkle icon)
+- Create event: "Import from Luma" fetches event details from Luma URL via `/api/fetch-luma-event`
+
+### Brand color rules for admin
+- Only 5 colors: #e8ff79, #1d3d0f, #fdfff0, #000000, #ffffff
+- Do NOT use #e8ff79 for chart bars/fills (too light) — use #1d3d0f with opacity
+- Text contrast: minimum opacity /40 on white backgrounds, /50+ for readable text
+- Opacity hierarchy: /65 body text, /60 secondary, /55 labels, /50 tertiary, /45 timestamps, /40 decorative
 
 ### New tables needed
 - `send_log` — id, event_id, target_email, match_count, status, sent_at
-
-### Admin pages
-- `/admin` — login + event list
-- `/admin/event/[slug]` — per-event dashboard (participants, matches, email controls)
