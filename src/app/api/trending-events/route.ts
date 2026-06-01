@@ -173,10 +173,13 @@ async function fetchFromLuma(): Promise<TrendingEvent[]> {
     const data = await res.json();
     const entries: LumaEntry[] = data.entries || [];
 
-    // Filter by keywords in event name
+    // Filter by keywords in event name (word-boundary matching to avoid false positives like "migraine" matching "ai")
+    const keywordPattern = new RegExp(
+      `\\b(${KEYWORDS.map((kw) => kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`,
+      "i"
+    );
     const filtered = entries.filter((entry) => {
-      const name = entry.event.name.toLowerCase();
-      return KEYWORDS.some((kw) => name.includes(kw));
+      return keywordPattern.test(entry.event.name);
     });
 
     // Only future events
