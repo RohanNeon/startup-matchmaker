@@ -185,6 +185,15 @@ export default function AdminLayout({
 
   const pathname = usePathname();
   const isSettings = pathname === "/admin/settings";
+  const isEventPage = pathname.startsWith("/admin/event/");
+
+  const navItems = [
+    { href: "/admin", label: "Home", match: (p: string) => p === "/admin" },
+    { href: "/admin/dashboard", label: "Dashboard", match: (p: string) => p === "/admin/dashboard" },
+    { href: "/admin/events", label: "Events", match: (p: string) => p === "/admin/events" },
+    { href: "/admin/calendar", label: "Calendar", match: (p: string) => p === "/admin/calendar" },
+    { href: "/admin/trending", label: "Trending", match: (p: string) => p === "/admin/trending" },
+  ];
 
   return (
     <AdminContext.Provider value={user}>
@@ -193,8 +202,8 @@ export default function AdminLayout({
         <header className="sticky top-0 z-50 bg-[#1d3d0f]">
           <div className="max-w-7xl mx-auto px-5 sm:px-6 h-14 flex items-center justify-between">
             {/* ── Left: Logo + Nav ── */}
-            <div className="flex items-center gap-3">
-              <Link href="/admin" className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1.5">
+              <Link href="/admin" className="flex items-center gap-2.5 mr-2">
                 <Image
                   src="/neon-logo.png"
                   alt="Neon Fund"
@@ -202,21 +211,27 @@ export default function AdminLayout({
                   height={24}
                   className="rounded"
                 />
-                <span className="font-semibold text-[#e8ff79] text-sm">
+                <span className="font-semibold text-[#e8ff79] text-sm hidden sm:inline">
                   Neon Fund
                 </span>
               </Link>
-              <span className="text-[#ffffff]/15 text-xs">/</span>
-              <Link
-                href="/admin"
-                className={`text-sm px-2.5 py-1 rounded-md transition-colors ${
-                  !isSettings
-                    ? "text-[#ffffff] bg-[#ffffff]/10"
-                    : "text-[#ffffff]/50 hover:text-[#ffffff]/80"
-                }`}
-              >
-                Dashboard
-              </Link>
+              <span className="text-[#ffffff]/15 text-xs hidden sm:inline">/</span>
+              {navItems.map((item) => {
+                const isActive = item.match(pathname) || (isEventPage && item.href === "/admin/events");
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`text-[12px] px-2 py-1 rounded-md transition-colors ${
+                      isActive
+                        ? "text-[#ffffff] bg-[#ffffff]/10"
+                        : "text-[#ffffff]/40 hover:text-[#ffffff]/80 hover:bg-[#ffffff]/5"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
             </div>
 
             {/* ── Right: Luma + Settings + Profile ── */}
