@@ -460,9 +460,12 @@ export default function AdminPage() {
       <div className="flex-1 min-w-0 space-y-10">
         {/* ── Dashboard metrics ── */}
         <section>
-          <h1 className="text-2xl font-bold text-[#000000] tracking-tight mb-6">
-            Dashboard
-          </h1>
+          <Link href="/admin/dashboard" className="group inline-flex items-center gap-2 mb-6">
+            <h1 className="text-2xl font-bold text-[#000000] tracking-tight group-hover:text-[#1d3d0f] transition-colors">
+              Dashboard
+            </h1>
+            <svg className="w-4 h-4 text-[#1d3d0f]/0 group-hover:text-[#1d3d0f]/40 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+          </Link>
 
           {/* Top-level stats */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -575,9 +578,12 @@ export default function AdminPage() {
         {/* ── Events list ── */}
       <section>
         <div className="flex items-end justify-between mb-3">
-          <h2 className="text-lg font-bold text-[#000000] tracking-tight">
-            Events
-          </h2>
+          <Link href="/admin/events" className="group inline-flex items-center gap-2">
+            <h2 className="text-lg font-bold text-[#000000] tracking-tight group-hover:text-[#1d3d0f] transition-colors">
+              Events
+            </h2>
+            <svg className="w-3.5 h-3.5 text-[#1d3d0f]/0 group-hover:text-[#1d3d0f]/40 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+          </Link>
           {isSuperAdmin && !showCreate && (
             <button
               onClick={() => setShowCreate(true)}
@@ -937,9 +943,12 @@ export default function AdminPage() {
       <aside className="hidden lg:block w-72 flex-shrink-0">
         <div className="sticky top-20 space-y-6">
           <div>
-            <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
-              Calendar
-            </h3>
+            <Link href="/admin/calendar" className="group inline-flex items-center gap-1.5 mb-3">
+              <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider group-hover:text-[#1d3d0f] transition-colors">
+                Calendar
+              </h3>
+              <svg className="w-3 h-3 text-[#1d3d0f]/0 group-hover:text-[#1d3d0f]/40 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+            </Link>
             <EventCalendar events={events} />
           </div>
           <TrendingEvents />
@@ -1427,9 +1436,12 @@ function TrendingEvents() {
   if (loading) {
     return (
       <div>
-        <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
-          Trending Events
-        </h3>
+        <Link href="/admin/trending" className="group inline-flex items-center gap-1.5 mb-3">
+          <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider group-hover:text-[#1d3d0f] transition-colors">
+            Trending Events
+          </h3>
+          <svg className="w-3 h-3 text-[#1d3d0f]/0 group-hover:text-[#1d3d0f]/40 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+        </Link>
         <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-4">
           <div className="flex items-center justify-center py-6">
             <div className="neon-loader" />
@@ -1441,9 +1453,12 @@ function TrendingEvents() {
 
   return (
     <div>
-      <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
-        Trending Events
-      </h3>
+      <Link href="/admin/trending" className="group inline-flex items-center gap-1.5 mb-3">
+        <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider group-hover:text-[#1d3d0f] transition-colors">
+          Trending Events
+        </h3>
+        <svg className="w-3 h-3 text-[#1d3d0f]/0 group-hover:text-[#1d3d0f]/40 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+      </Link>
 
       <div className="rounded-xl border border-[#1d3d0f]/8 overflow-hidden bg-[#fdfff0]">
         {/* Region tabs */}
