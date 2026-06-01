@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/trending-events",
-      "schedule": "30 2,11 * * *"
+      "schedule": "30 2 * * *"
     }
   ]
 }

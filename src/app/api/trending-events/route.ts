@@ -81,8 +81,8 @@ interface TrendingEvent {
   cover_url: string | null;
 }
 
-// Cache duration: 6 hours (refresh happens via cron at 8am and 5pm)
-const CACHE_HOURS = 6;
+// Cache duration: 20 hours (cron refreshes once daily at 8am IST, Hobby plan limit)
+const CACHE_HOURS = 20;
 
 // GET /api/trending-events — return cached trending events
 export async function GET() {
