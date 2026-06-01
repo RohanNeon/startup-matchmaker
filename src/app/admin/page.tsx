@@ -1384,10 +1384,22 @@ interface TrendingEventData {
   cover_url: string | null;
 }
 
+interface RegionData {
+  label: string;
+  events: TrendingEventData[];
+  updated_at: string | null;
+}
+
+const LUMA_DISCOVER_URLS: Record<string, string> = {
+  bangalore: "https://lu.ma/discover?geo=Bengaluru",
+  bay_area: "https://lu.ma/discover?geo=San+Francisco",
+  singapore: "https://lu.ma/discover?geo=Singapore",
+};
+
 function TrendingEvents() {
-  const [events, setEvents] = useState<TrendingEventData[]>([]);
+  const [regions, setRegions] = useState<Record<string, RegionData>>({});
   const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [activeRegion, setActiveRegion] = useState("bangalore");
 
   useEffect(() => {
     fetchTrending();
@@ -1397,13 +1409,20 @@ function TrendingEvents() {
     try {
       const res = await fetch("/api/trending-events");
       const data = await res.json();
-      setEvents(data.events || []);
-      setLastUpdated(data.updated_at || null);
+      setRegions(data.regions || {});
     } catch {
-      // Silently fail — trending is non-critical
+      // Silently fail
     }
     setLoading(false);
   }
+
+  const regionIds = Object.keys(regions).length > 0
+    ? Object.keys(regions)
+    : ["bangalore", "bay_area", "singapore"];
+
+  const current = regions[activeRegion];
+  const events = current?.events || [];
+  const lastUpdated = current?.updated_at || null;
 
   if (loading) {
     return (
@@ -1420,85 +1439,100 @@ function TrendingEvents() {
     );
   }
 
-  if (events.length === 0) {
-    return (
-      <div>
-        <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
-          Trending Events
-        </h3>
-        <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-4">
-          <p className="text-xs text-[#1d3d0f]/50 text-center py-4">
-            No trending events found
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider">
-          Trending Events
-        </h3>
-        <span className="text-[9px] text-[#1d3d0f]/40">Bangalore</span>
-      </div>
+      <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-3">
+        Trending Events
+      </h3>
 
-      {/* Scrollable container */}
       <div className="rounded-xl border border-[#1d3d0f]/8 overflow-hidden bg-[#fdfff0]">
-        <div className="max-h-[480px] overflow-y-auto divide-y divide-[#1d3d0f]/5">
-          {events.map((event) => {
-            const date = new Date(event.start_at);
-            const dayStr = date.toLocaleDateString("en-IN", {
-              day: "numeric",
-              month: "short",
-            });
-            const timeStr = date.toLocaleTimeString("en-IN", {
-              hour: "numeric",
-              minute: "2-digit",
-              hour12: true,
-            });
-
+        {/* Region tabs */}
+        <div className="flex border-b border-[#1d3d0f]/6 bg-white">
+          {regionIds.map((id) => {
+            const label = regions[id]?.label || id.replace("_", " ");
+            const count = regions[id]?.events?.length || 0;
+            const isActive = activeRegion === id;
             return (
-              <a
-                key={event.id}
-                href={event.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex gap-3 p-3 hover:bg-[#e8ff79]/10 transition-colors group"
+              <button
+                key={id}
+                onClick={() => setActiveRegion(id)}
+                className={`flex-1 py-2 text-[10px] font-semibold transition-colors relative ${
+                  isActive
+                    ? "text-[#1d3d0f]"
+                    : "text-[#1d3d0f]/35 hover:text-[#1d3d0f]/60"
+                }`}
               >
-                {/* Square cover image */}
-                <div className="w-[72px] h-[72px] rounded-lg overflow-hidden flex-shrink-0 bg-[#1d3d0f]/5 border border-[#1d3d0f]/6">
-                  {event.cover_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={event.cover_url}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-[#1d3d0f]/5 to-[#e8ff79]/20 flex items-center justify-center">
-                      <svg className="w-4 h-4 text-[#1d3d0f]/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-
-                {/* Event details */}
-                <div className="flex-1 min-w-0 py-0.5">
-                  <p className="text-[12px] font-semibold text-[#1d3d0f] leading-snug line-clamp-2 group-hover:text-[#000000]">
-                    {event.name}
-                  </p>
-                  <p className="text-[10px] text-[#1d3d0f]/50 mt-1.5 truncate">
-                    {dayStr}, {timeStr}
-                    {event.host_name && ` · ${event.host_name}`}
-                  </p>
-                </div>
-              </a>
+                {label === "Bay Area" ? "Bay Area" : label}
+                {count > 0 && (
+                  <span className={`ml-1 ${isActive ? "text-[#1d3d0f]/50" : "text-[#1d3d0f]/25"}`}>
+                    {count}
+                  </span>
+                )}
+                {isActive && (
+                  <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-[#1d3d0f] rounded-full" />
+                )}
+              </button>
             );
           })}
         </div>
+
+        {/* Event list */}
+        {events.length > 0 ? (
+          <div className="max-h-[480px] overflow-y-auto divide-y divide-[#1d3d0f]/5">
+            {events.map((event) => {
+              const date = new Date(event.start_at);
+              const dayStr = date.toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "short",
+              });
+              const timeStr = date.toLocaleTimeString("en-IN", {
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+              });
+
+              return (
+                <a
+                  key={event.id}
+                  href={event.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex gap-3 p-3 hover:bg-[#e8ff79]/10 transition-colors group"
+                >
+                  <div className="w-[72px] h-[72px] rounded-lg overflow-hidden flex-shrink-0 bg-[#1d3d0f]/5 border border-[#1d3d0f]/6">
+                    {event.cover_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={event.cover_url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-[#1d3d0f]/5 to-[#e8ff79]/20 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-[#1d3d0f]/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0 py-0.5">
+                    <p className="text-[12px] font-semibold text-[#1d3d0f] leading-snug line-clamp-2 group-hover:text-[#000000]">
+                      {event.name}
+                    </p>
+                    <p className="text-[10px] text-[#1d3d0f]/50 mt-1.5 truncate">
+                      {dayStr}, {timeStr}
+                      {event.host_name && ` · ${event.host_name}`}
+                    </p>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="py-8 text-center">
+            <p className="text-xs text-[#1d3d0f]/40">No events found</p>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="flex items-center justify-between px-3 py-2 border-t border-[#1d3d0f]/5 bg-[#fdfff0]">
@@ -1512,7 +1546,7 @@ function TrendingEvents() {
             </span>
           )}
           <a
-            href="https://lu.ma/discover?geo=Bengaluru"
+            href={LUMA_DISCOVER_URLS[activeRegion] || "https://lu.ma/discover"}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[9px] text-[#1d3d0f]/50 hover:text-[#1d3d0f] transition-colors"

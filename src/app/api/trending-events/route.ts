@@ -3,71 +3,53 @@ import { getSupabaseAdmin } from "@/lib/admin-auth";
 
 const LUMA_API = "https://api.lu.ma/discover/get-paginated-events";
 
-// Bangalore coordinates
-const GEO = {
-  latitude: "12.9716",
-  longitude: "77.5946",
-  place_id: "ChIJbU60yXAWrjsR4E9-UejD3_g",
+// Regions to fetch
+const REGIONS: Record<string, { label: string; latitude: string; longitude: string; place_id: string }> = {
+  bangalore: {
+    label: "Bangalore",
+    latitude: "12.9716",
+    longitude: "77.5946",
+    place_id: "ChIJbU60yXAWrjsR4E9-UejD3_g",
+  },
+  bay_area: {
+    label: "Bay Area",
+    latitude: "37.7749",
+    longitude: "-122.4194",
+    place_id: "ChIJIQBpAG2ahYAR_6128GcTUEo",
+  },
+  singapore: {
+    label: "Singapore",
+    latitude: "1.3521",
+    longitude: "103.8198",
+    place_id: "ChIJdZOLiiMR2jERxPWrUs9peIg",
+  },
 };
 
-// Keywords to filter relevant events (matched against event name, lowercase)
+// Keywords to filter relevant events (matched against event name with word boundaries)
 const KEYWORDS = [
-  "ai",
-  "startup",
-  "founder",
-  "vc",
-  "venture",
-  "investor",
-  "agentic",
-  "saas",
-  "tech",
-  "devops",
-  "infra",
-  "cloud",
-  "product",
-  "growth",
-  "seed",
-  "series",
-  "accelerator",
-  "incubator",
-  "pitch",
-  "demo day",
-  "hackathon",
-  "builder",
-  "engineering",
-  "deeptech",
-  "fintech",
-  "cybersecurity",
-  "open source",
-  "llm",
-  "genai",
-  "machine learning",
-  "data science",
-  "agent",
-  "mcp",
-  "web3",
-  "blockchain",
-  "crypto",
+  "ai", "startup", "founder", "vc", "venture", "investor", "agentic",
+  "saas", "tech", "devops", "infra", "cloud", "product", "growth",
+  "seed", "series", "accelerator", "incubator", "pitch", "demo day",
+  "hackathon", "builder", "engineering", "deeptech", "fintech",
+  "cybersecurity", "open source", "llm", "genai", "machine learning",
+  "data science", "agent", "mcp", "web3", "blockchain", "crypto",
 ];
 
-interface LumaEvent {
-  name: string;
-  url: string;
-  start_at: string;
-  end_at: string | null;
-  cover_url: string | null;
-  geo_address_info?: {
-    city?: string;
-    short_address?: string;
-  };
-}
+const KEYWORD_PATTERN = new RegExp(
+  `\\b(${KEYWORDS.map((kw) => kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`,
+  "i"
+);
 
 interface LumaEntry {
-  event: LumaEvent;
-  hosts?: Array<{
-    name?: string;
-    avatar_url?: string;
-  }>;
+  event: {
+    name: string;
+    url: string;
+    start_at: string;
+    end_at: string | null;
+    cover_url: string | null;
+    geo_address_info?: { city?: string; short_address?: string };
+  };
+  hosts?: Array<{ name?: string; avatar_url?: string }>;
 }
 
 interface TrendingEvent {
@@ -81,83 +63,112 @@ interface TrendingEvent {
   cover_url: string | null;
 }
 
-// Cache duration: 20 hours (cron refreshes once daily at 8am IST, Hobby plan limit)
+// Cache duration: 20 hours (cron refreshes once daily at 8am IST)
 const CACHE_HOURS = 20;
 
-// GET /api/trending-events — return cached trending events
+// GET /api/trending-events — return cached trending events for all regions
 export async function GET() {
   const supabase = getSupabaseAdmin();
 
-  // Check cache freshness
+  // Fetch all cached regions at once
   const { data: cached } = await supabase
     .from("trending_events_cache")
-    .select("events, updated_at")
-    .eq("id", "bangalore")
-    .single();
+    .select("id, events, updated_at")
+    .in("id", Object.keys(REGIONS));
 
+  const cachedMap = new Map<string, { events: TrendingEvent[]; updated_at: string }>();
   if (cached) {
-    const age =
-      Date.now() - new Date(cached.updated_at).getTime();
-    const maxAge = CACHE_HOURS * 60 * 60 * 1000;
-
-    if (age < maxAge) {
-      return NextResponse.json({
-        events: cached.events as TrendingEvent[],
-        cached: true,
-        updated_at: cached.updated_at,
-      });
+    for (const row of cached) {
+      cachedMap.set(row.id, { events: row.events as TrendingEvent[], updated_at: row.updated_at });
     }
   }
 
-  // Cache is stale or missing — fetch fresh
-  const events = await fetchFromLuma();
+  const maxAge = CACHE_HOURS * 60 * 60 * 1000;
+  const now = Date.now();
+  const result: Record<string, { events: TrendingEvent[]; updated_at: string }> = {};
+  const staleRegions: string[] = [];
 
-  if (events.length > 0) {
-    await supabase.from("trending_events_cache").upsert(
-      {
-        id: "bangalore",
-        events,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "id" }
+  for (const regionId of Object.keys(REGIONS)) {
+    const entry = cachedMap.get(regionId);
+    if (entry && (now - new Date(entry.updated_at).getTime()) < maxAge) {
+      result[regionId] = entry;
+    } else {
+      staleRegions.push(regionId);
+    }
+  }
+
+  // Fetch stale regions in parallel
+  if (staleRegions.length > 0) {
+    const fetches = await Promise.all(
+      staleRegions.map(async (regionId) => {
+        const events = await fetchFromLuma(regionId);
+        const updated_at = new Date().toISOString();
+
+        if (events.length > 0) {
+          await supabase.from("trending_events_cache").upsert(
+            { id: regionId, events, updated_at },
+            { onConflict: "id" }
+          );
+        }
+
+        return { regionId, events, updated_at };
+      })
     );
+
+    for (const { regionId, events, updated_at } of fetches) {
+      result[regionId] = { events, updated_at };
+    }
   }
 
   return NextResponse.json({
-    events,
-    cached: false,
-    updated_at: new Date().toISOString(),
+    regions: Object.fromEntries(
+      Object.entries(REGIONS).map(([id, geo]) => [
+        id,
+        {
+          label: geo.label,
+          events: result[id]?.events || [],
+          updated_at: result[id]?.updated_at || null,
+        },
+      ])
+    ),
   });
 }
 
-// POST /api/trending-events — force refresh cache (called by cron)
+// POST /api/trending-events — force refresh all regions
 export async function POST() {
-  const events = await fetchFromLuma();
   const supabase = getSupabaseAdmin();
 
-  await supabase.from("trending_events_cache").upsert(
-    {
-      id: "bangalore",
-      events,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "id" }
+  const results = await Promise.all(
+    Object.keys(REGIONS).map(async (regionId) => {
+      const events = await fetchFromLuma(regionId);
+      const updated_at = new Date().toISOString();
+
+      await supabase.from("trending_events_cache").upsert(
+        { id: regionId, events, updated_at },
+        { onConflict: "id" }
+      );
+
+      return { regionId, count: events.length };
+    })
   );
 
   return NextResponse.json({
     refreshed: true,
-    count: events.length,
+    results,
     updated_at: new Date().toISOString(),
   });
 }
 
-async function fetchFromLuma(): Promise<TrendingEvent[]> {
+async function fetchFromLuma(regionId: string): Promise<TrendingEvent[]> {
+  const geo = REGIONS[regionId];
+  if (!geo) return [];
+
   try {
     const params = new URLSearchParams({
       pagination_limit: "50",
-      geo_latitude: GEO.latitude,
-      geo_longitude: GEO.longitude,
-      geo_place_id: GEO.place_id,
+      geo_latitude: geo.latitude,
+      geo_longitude: geo.longitude,
+      geo_place_id: geo.place_id,
     });
 
     const res = await fetch(`${LUMA_API}?${params}`, {
@@ -173,24 +184,17 @@ async function fetchFromLuma(): Promise<TrendingEvent[]> {
     const data = await res.json();
     const entries: LumaEntry[] = data.entries || [];
 
-    // Filter by keywords in event name (word-boundary matching to avoid false positives like "migraine" matching "ai")
-    const keywordPattern = new RegExp(
-      `\\b(${KEYWORDS.map((kw) => kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`,
-      "i"
+    const filtered = entries.filter((entry) =>
+      KEYWORD_PATTERN.test(entry.event.name)
     );
-    const filtered = entries.filter((entry) => {
-      return keywordPattern.test(entry.event.name);
-    });
 
-    // Only future events
     const now = new Date().toISOString();
     const upcoming = filtered.filter(
       (entry) => entry.event.start_at > now
     );
 
-    // Map to our format, take top 8
     return upcoming.slice(0, 8).map((entry, i) => ({
-      id: `luma-${i}-${entry.event.url}`,
+      id: `luma-${regionId}-${i}-${entry.event.url}`,
       name: entry.event.name,
       url: `https://lu.ma/${entry.event.url}`,
       start_at: entry.event.start_at,
@@ -200,7 +204,7 @@ async function fetchFromLuma(): Promise<TrendingEvent[]> {
       cover_url: entry.event.cover_url || null,
     }));
   } catch (err) {
-    console.error("Failed to fetch from Luma:", err);
+    console.error(`Failed to fetch from Luma for ${regionId}:`, err);
     return [];
   }
 }
