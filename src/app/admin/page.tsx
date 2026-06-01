@@ -1438,10 +1438,10 @@ function TrendingEvents() {
                 href={event.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex gap-3 p-2.5 hover:bg-[#e8ff79]/10 transition-colors group"
+                className="flex gap-3 p-3 hover:bg-[#e8ff79]/10 transition-colors group"
               >
                 {/* Square cover image */}
-                <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-[#1d3d0f]/5 border border-[#1d3d0f]/6">
+                <div className="w-[72px] h-[72px] rounded-lg overflow-hidden flex-shrink-0 bg-[#1d3d0f]/5 border border-[#1d3d0f]/6">
                   {event.cover_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -1460,10 +1460,10 @@ function TrendingEvents() {
 
                 {/* Event details */}
                 <div className="flex-1 min-w-0 py-0.5">
-                  <p className="text-[11px] font-semibold text-[#1d3d0f] leading-snug line-clamp-2 group-hover:text-[#000000]">
+                  <p className="text-[12px] font-semibold text-[#1d3d0f] leading-snug line-clamp-2 group-hover:text-[#000000]">
                     {event.name}
                   </p>
-                  <p className="text-[10px] text-[#1d3d0f]/50 mt-1 truncate">
+                  <p className="text-[10px] text-[#1d3d0f]/50 mt-1.5 truncate">
                     {dayStr}, {timeStr}
                     {event.host_name && ` · ${event.host_name}`}
                   </p>
