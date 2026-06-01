@@ -131,8 +131,9 @@ export default function AdminLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#ffffff] flex items-center justify-center">
-        <Image src="/neon-logo.png" alt="Loading" width={40} height={40} className="animate-logo-pulse rounded-lg" />
+      <div className="min-h-screen bg-[#ffffff] flex flex-col items-center justify-center gap-4">
+        <Image src="/neon-logo.png" alt="Loading" width={44} height={44} className="animate-logo-pulse rounded-lg" />
+        <p className="text-[11px] text-[#1d3d0f]/30 font-medium tracking-wider uppercase">Loading</p>
       </div>
     );
   }

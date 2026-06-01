@@ -8,11 +8,13 @@
   --color-neon-hover: #d4eb65;
 }
 
-@keyframes logo-pulse {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.08); }
+@keyframes logo-loader {
+  0% { opacity: 0.15; transform: scale(0.92); filter: grayscale(100%); }
+  50% { opacity: 1; transform: scale(1); filter: grayscale(0%); }
+  100% { opacity: 0.15; transform: scale(0.92); filter: grayscale(100%); }
 }
 
 .animate-logo-pulse {
-  animation: logo-pulse 1.6s ease-in-out infinite;
+  animation: logo-loader 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  filter: drop-shadow(0 0 8px rgba(232, 255, 121, 0.4));
 }
