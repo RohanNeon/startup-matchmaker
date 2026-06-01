@@ -466,25 +466,33 @@ export default function AdminPage() {
 
           {/* Top-level stats */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <MetricCard label="Total Events" value={metrics?.totalEvents ?? 0} />
+            <MetricCard label="Total Events" value={metrics?.totalEvents ?? 0} icon={
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
+            } />
             <MetricCard
               label="Active"
               value={metrics?.activeEvents ?? 0}
               accent
+              icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>}
             />
             <MetricCard
               label="Total Guests"
               value={metrics?.totalGuests ?? 0}
+              icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" /></svg>}
             />
             <MetricCard
               label="Registered"
               value={metrics?.totalRegistered ?? 0}
               accent
+              icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
             />
-            <MetricCard label="MatchUps" value={metrics?.totalMatches ?? 0} />
+            <MetricCard label="MatchUps" value={metrics?.totalMatches ?? 0} icon={
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>
+            } />
             <MetricCard
               label="Avg Conversion"
               value={`${metrics?.overallConversion ?? 0}%`}
+              icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>}
             />
           </div>
 
@@ -566,7 +574,7 @@ export default function AdminPage() {
 
         {/* ── Events list ── */}
       <section>
-        <div className="flex items-end justify-between mb-5">
+        <div className="flex items-end justify-between mb-3">
           <h2 className="text-lg font-bold text-[#000000] tracking-tight">
             Events
           </h2>
@@ -947,10 +955,12 @@ function MetricCard({
   label,
   value,
   accent,
+  icon,
 }: {
   label: string;
   value: number | string;
   accent?: boolean;
+  icon?: React.ReactNode;
 }) {
   return (
     <div
@@ -960,8 +970,15 @@ function MetricCard({
           : "bg-[#fdfff0] border-[#1d3d0f]/8"
       }`}
     >
-      <p className="text-2xl font-bold text-[#000000] leading-none">{value}</p>
-      <p className="text-[11px] text-[#1d3d0f]/60 mt-1.5">{label}</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-2xl font-bold text-[#000000] leading-none">{value}</p>
+          <p className="text-[11px] text-[#1d3d0f]/60 mt-1.5">{label}</p>
+        </div>
+        {icon && (
+          <span className="text-[#1d3d0f]/20">{icon}</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -1175,21 +1192,24 @@ function EventCalendar({ events }: { events: EventWithStats[] }) {
         </div>
       )}
 
-      {/* Upcoming events from other months */}
-      {events.length > 0 && (
-        <div className={`${monthEvents.length > 0 ? "mt-2" : "mt-3"} space-y-1.5`}>
-          {events
-            .filter((ev) => {
-              if (!ev.event_date) return false;
-              const d = new Date(ev.event_date);
-              return !(d.getFullYear() === year && d.getMonth() === month);
-            })
-            .slice(0, 3)
-            .map((ev) => (
+      {/* Upcoming events from other months (future only) */}
+      {(() => {
+        const now = new Date();
+        const futureOtherMonth = events.filter((ev) => {
+          if (!ev.event_date) return false;
+          const d = new Date(ev.event_date);
+          const isOtherMonth = !(d.getFullYear() === year && d.getMonth() === month);
+          const isFuture = d >= new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          return isOtherMonth && isFuture;
+        });
+        if (futureOtherMonth.length === 0) return null;
+        return (
+          <div className={`${monthEvents.length > 0 ? "mt-2" : "mt-3"} space-y-1.5`}>
+            {futureOtherMonth.slice(0, 3).map((ev) => (
               <Link
                 key={ev.id}
                 href={`/admin/event/${ev.slug}`}
-                className="flex items-center gap-2 group opacity-40 hover:opacity-70 transition-opacity"
+                className="flex items-center gap-2 group opacity-50 hover:opacity-80 transition-opacity"
               >
                 <span className="w-1 h-1 rounded-full bg-[#1d3d0f] flex-shrink-0" />
                 <span className="text-[10px] text-[#000000] group-hover:underline truncate">
@@ -1205,8 +1225,9 @@ function EventCalendar({ events }: { events: EventWithStats[] }) {
                 </span>
               </Link>
             ))}
-        </div>
-      )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -1232,12 +1253,12 @@ function EventCard({
 
   return (
     <div
-      className={`rounded-xl border transition-all ${
+      className={`group/card rounded-xl border transition-all ${
         isDeleting ? "opacity-50 pointer-events-none" : ""
       } ${
         highlighted
-          ? "bg-[#ffffff] border-[#e8ff79] shadow-sm"
-          : "bg-[#fdfff0] border-[#1d3d0f]/8"
+          ? "bg-[#ffffff] border-[#e8ff79] shadow-sm hover:shadow-md"
+          : "bg-[#fdfff0] border-[#1d3d0f]/8 hover:border-[#1d3d0f]/15 hover:shadow-sm"
       }`}
     >
       <Link
@@ -1292,11 +1313,30 @@ function EventCard({
                   </a>
                 )}
               </div>
-              {highlighted && (
-                <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded font-semibold bg-[#e8ff79] text-[#1d3d0f]">
-                  Active
-                </span>
-              )}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {highlighted && (
+                  <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-[#e8ff79] text-[#1d3d0f]">
+                    Active
+                  </span>
+                )}
+                {/* Delete — hover-only trash icon */}
+                {isSuperAdmin && onDelete && (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(event.id, event.name); }}
+                    disabled={isDeleting}
+                    className="p-1 rounded-md opacity-0 group-hover/card:opacity-100 text-[#1d3d0f]/25 hover:!text-red-500 hover:bg-red-50 transition-all"
+                    title="Delete event"
+                  >
+                    {isDeleting ? (
+                      <div className="w-3.5 h-3.5 border-2 border-red-300 border-t-red-500 rounded-full animate-spin" />
+                    ) : (
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Stats row */}
@@ -1311,7 +1351,7 @@ function EventCard({
           {/* Arrow */}
           <div className="hidden sm:flex items-center flex-shrink-0">
             <svg
-              className="w-4 h-4 text-[#1d3d0f]/30 group-hover:text-[#1d3d0f]/60 transition-colors"
+              className="w-4 h-4 text-[#1d3d0f]/20 group-hover/card:text-[#1d3d0f]/50 transition-colors"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -1326,19 +1366,6 @@ function EventCard({
           </div>
         </div>
       </Link>
-
-      {/* Delete button — only for super admins */}
-      {isSuperAdmin && onDelete && (
-        <div className="px-5 pb-3 flex justify-end">
-          <button
-            onClick={() => onDelete(event.id, event.name)}
-            disabled={isDeleting}
-            className="text-[11px] text-[#1d3d0f]/40 hover:text-red-500 transition-colors"
-          >
-            {isDeleting ? "Deleting..." : "Delete event"}
-          </button>
-        </div>
-      )}
     </div>
   );
 }
