@@ -1417,87 +1417,96 @@ function TrendingEvents() {
         <span className="text-[9px] text-[#1d3d0f]/40">Bangalore</span>
       </div>
 
-      <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 divide-y divide-[#1d3d0f]/5 overflow-hidden">
-        {events.map((event) => {
-          const date = new Date(event.start_at);
-          const dayStr = date.toLocaleDateString("en-IN", {
-            day: "numeric",
-            month: "short",
-          });
-          const timeStr = date.toLocaleTimeString("en-IN", {
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-          });
-
-          return (
-            <a
-              key={event.id}
-              href={event.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex gap-3 p-3 hover:bg-[#e8ff79]/10 transition-colors group"
-            >
-              {/* Date badge */}
-              <div className="w-10 h-10 rounded-lg bg-white border border-[#1d3d0f]/8 flex flex-col items-center justify-center flex-shrink-0">
-                <span className="text-[10px] font-bold text-[#1d3d0f] leading-none">
-                  {date.getDate()}
-                </span>
-                <span className="text-[8px] text-[#1d3d0f]/50 uppercase leading-none mt-0.5">
-                  {date.toLocaleDateString("en-IN", { month: "short" })}
-                </span>
-              </div>
-
-              {/* Event info */}
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold text-[#1d3d0f] leading-tight line-clamp-2 group-hover:text-[#000000]">
-                  {event.name}
-                </p>
-                <div className="flex items-center gap-1 mt-1">
-                  {event.host_name && (
-                    <span className="text-[9px] text-[#1d3d0f]/55 truncate">
-                      {event.host_name}
-                    </span>
-                  )}
-                  {event.host_name && (
-                    <span className="text-[#1d3d0f]/30">·</span>
-                  )}
-                  <span className="text-[9px] text-[#1d3d0f]/55 flex-shrink-0">
-                    {dayStr}, {timeStr}
-                  </span>
-                </div>
-              </div>
-
-              {/* External link arrow */}
-              <div className="flex items-start pt-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                <svg className="w-3 h-3 text-[#1d3d0f]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
-                </svg>
-              </div>
-            </a>
-          );
-        })}
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center justify-between mt-2 px-1">
-        {lastUpdated && (
-          <span className="text-[8px] text-[#1d3d0f]/35">
-            Updated {new Date(lastUpdated).toLocaleTimeString("en-IN", {
+      {/* Scrollable container */}
+      <div className="rounded-xl border border-[#1d3d0f]/8 overflow-hidden bg-[#fdfff0]">
+        <div className="max-h-[420px] overflow-y-auto space-y-2 p-2.5">
+          {events.map((event) => {
+            const date = new Date(event.start_at);
+            const dayStr = date.toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+            });
+            const timeStr = date.toLocaleTimeString("en-IN", {
               hour: "numeric",
               minute: "2-digit",
               hour12: true,
-            })}
-          </span>
-        )}
-        <a
-          href="https://lu.ma/discover?geo=Bengaluru"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[9px] text-[#1d3d0f]/50 hover:text-[#1d3d0f] transition-colors"
-        >
-          View all on Luma
-        </a>
+            });
+
+            return (
+              <a
+                key={event.id}
+                href={event.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-lg overflow-hidden border border-[#1d3d0f]/6 hover:border-[#1d3d0f]/15 bg-white transition-all group hover:shadow-sm"
+              >
+                {/* Cover image */}
+                {event.cover_url ? (
+                  <div className="w-full h-24 overflow-hidden bg-[#1d3d0f]/5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={event.cover_url}
+                      alt=""
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full h-16 bg-gradient-to-br from-[#1d3d0f]/5 to-[#e8ff79]/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-[#1d3d0f]/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                    </svg>
+                  </div>
+                )}
+
+                {/* Event details */}
+                <div className="p-2.5">
+                  <p className="text-[12px] font-semibold text-[#1d3d0f] leading-snug line-clamp-2 group-hover:text-[#000000]">
+                    {event.name}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <svg className="w-3 h-3 text-[#1d3d0f]/35 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-[10px] text-[#1d3d0f]/55">
+                      {dayStr}, {timeStr}
+                    </span>
+                  </div>
+                  {event.host_name && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <svg className="w-3 h-3 text-[#1d3d0f]/35 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
+                      </svg>
+                      <span className="text-[10px] text-[#1d3d0f]/55 truncate">
+                        {event.host_name}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </a>
+            );
+          })}
+        </div>
+
+        {/* Footer inside the card */}
+        <div className="flex items-center justify-between px-3 py-2 border-t border-[#1d3d0f]/5 bg-[#fdfff0]">
+          {lastUpdated && (
+            <span className="text-[8px] text-[#1d3d0f]/35">
+              Updated {new Date(lastUpdated).toLocaleTimeString("en-IN", {
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+              })}
+            </span>
+          )}
+          <a
+            href="https://lu.ma/discover?geo=Bengaluru"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[9px] text-[#1d3d0f]/50 hover:text-[#1d3d0f] transition-colors"
+          >
+            View all on Luma
+          </a>
+        </div>
       </div>
     </div>
   );
