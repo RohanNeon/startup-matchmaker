@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -22,9 +21,46 @@ interface ProfileRow {
   name: string;
   company: string;
   role: string;
+  what_building: string | null;
   looking_for: string[];
   can_offer: string[];
   event_id: string | null;
+}
+
+// Auto-extract sectors from what_building text
+const SECTOR_KEYWORDS: Record<string, string[]> = {
+  "AI / ML": ["ai", "artificial intelligence", "machine learning", "deep learning", "llm", "genai", "gen ai", "gpt", "nlp", "computer vision", "agentic"],
+  "SaaS": ["saas", "software as a service", "b2b saas", "b2c saas"],
+  "Fintech": ["fintech", "financial", "banking", "payments", "lending", "insurance", "neobank", "defi"],
+  "DevTools": ["devtools", "developer tools", "developer platform", "api", "sdk", "infrastructure", "infra", "devops", "cicd"],
+  "Cybersecurity": ["cybersecurity", "cyber security", "security", "infosec", "soc", "siem", "threat"],
+  "HealthTech": ["healthtech", "health tech", "healthcare", "biotech", "medtech", "telemedicine"],
+  "EdTech": ["edtech", "education", "learning", "e-learning", "elearning"],
+  "E-Commerce": ["ecommerce", "e-commerce", "commerce", "marketplace", "d2c", "retail"],
+  "Web3 / Crypto": ["web3", "blockchain", "crypto", "defi", "nft", "dao", "decentralized"],
+  "Hardware": ["hardware", "robotics", "iot", "embedded", "chip", "semiconductor"],
+  "MarTech": ["martech", "marketing tech", "marketing automation", "adtech", "advertising"],
+  "Data / Analytics": ["data analytics", "data science", "analytics", "big data", "data platform"],
+  "Climate / Energy": ["climate", "cleantech", "sustainability", "energy", "ev", "carbon"],
+};
+
+function extractSectors(text: string | null): string[] {
+  if (!text) return [];
+  const lower = text.toLowerCase();
+  const matched: string[] = [];
+  for (const [sector, keywords] of Object.entries(SECTOR_KEYWORDS)) {
+    if (keywords.some((kw) => lower.includes(kw))) {
+      matched.push(sector);
+    }
+  }
+  return matched.length > 0 ? matched : ["Other"];
+}
+
+interface EventIdea {
+  id: string;
+  text: string;
+  added_by: string;
+  created_at: string;
 }
 
 export default function DashboardPage() {
@@ -32,38 +68,69 @@ export default function DashboardPage() {
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Sector overrides (profile email → sector)
+  const [sectorOverrides, setSectorOverrides] = useState<Record<string, string>>({});
+  const [editingSector, setEditingSector] = useState<string | null>(null);
+  const [newSectorValue, setNewSectorValue] = useState("");
+
+  // Event ideas
+  const [ideas, setIdeas] = useState<EventIdea[]>([]);
+  const [newIdea, setNewIdea] = useState("");
+  const [addingIdea, setAddingIdea] = useState(false);
+
   useEffect(() => {
     loadData();
   }, []);
 
   async function loadData() {
-    const [{ data: eventsData }, { data: profilesData }] = await Promise.all([
+    const [{ data: eventsData }, { data: profilesData }, { data: ideasData }] = await Promise.all([
       supabase.from("events").select("*").order("event_date", { ascending: false }),
-      supabase.from("profiles").select("email, name, company, role, looking_for, can_offer, event_id"),
+      supabase.from("profiles").select("email, name, company, role, what_building, looking_for, can_offer, event_id"),
+      supabase.from("event_ideas").select("*").order("created_at", { ascending: false }),
     ]);
 
     const evts: EventStat[] = [];
     if (eventsData) {
       for (const ev of eventsData) {
         const isLegacy = ev.slug === "agentic-infra-2026";
-        const guestQ = isLegacy
-          ? supabase.from("luma_list").select("*", { count: "exact", head: true }).is("event_id", null)
-          : supabase.from("luma_list").select("*", { count: "exact", head: true }).eq("event_id", ev.id);
-        const profQ = isLegacy
-          ? supabase.from("profiles").select("*", { count: "exact", head: true }).is("event_id", null)
-          : supabase.from("profiles").select("*", { count: "exact", head: true }).eq("event_id", ev.id);
-        const matchQ = isLegacy
-          ? supabase.from("matches").select("*", { count: "exact", head: true }).is("event_id", null)
-          : supabase.from("matches").select("*", { count: "exact", head: true }).eq("event_id", ev.id);
-
-        const [{ count: g }, { count: p }, { count: m }] = await Promise.all([guestQ, profQ, matchQ]);
+        const [{ count: g }, { count: p }, { count: m }] = await Promise.all([
+          isLegacy
+            ? supabase.from("luma_list").select("*", { count: "exact", head: true }).is("event_id", null)
+            : supabase.from("luma_list").select("*", { count: "exact", head: true }).eq("event_id", ev.id),
+          isLegacy
+            ? supabase.from("profiles").select("*", { count: "exact", head: true }).is("event_id", null)
+            : supabase.from("profiles").select("*", { count: "exact", head: true }).eq("event_id", ev.id),
+          isLegacy
+            ? supabase.from("matches").select("*", { count: "exact", head: true }).is("event_id", null)
+            : supabase.from("matches").select("*", { count: "exact", head: true }).eq("event_id", ev.id),
+        ]);
         evts.push({ ...ev, guestCount: g || 0, profileCount: p || 0, matchCount: m || 0 });
       }
     }
 
     setEvents(evts);
     setProfiles((profilesData as ProfileRow[]) || []);
+    setIdeas((ideasData as EventIdea[]) || []);
     setLoading(false);
+  }
+
+  async function handleAddIdea() {
+    if (!newIdea.trim()) return;
+    setAddingIdea(true);
+    const { data } = await supabase.from("event_ideas").insert([{
+      text: newIdea.trim(),
+      added_by: "admin",
+    }]).select().single();
+    if (data) {
+      setIdeas([data as EventIdea, ...ideas]);
+      setNewIdea("");
+    }
+    setAddingIdea(false);
+  }
+
+  async function handleDeleteIdea(id: string) {
+    await supabase.from("event_ideas").delete().eq("id", id);
+    setIdeas(ideas.filter((i) => i.id !== id));
   }
 
   if (loading) {
@@ -79,14 +146,8 @@ export default function DashboardPage() {
   const totalMatches = events.reduce((s, e) => s + e.matchCount, 0);
   const avgConversion = totalGuests > 0 ? Math.round((totalRegistered / totalGuests) * 100) : 0;
 
-  // Repeat attendees
-  const emailEventMap = new Map<string, Set<string>>();
-  for (const p of profiles) {
-    const key = p.event_id || "legacy";
-    if (!emailEventMap.has(p.email)) emailEventMap.set(p.email, new Set());
-    emailEventMap.get(p.email)!.add(key);
-  }
-  const repeatEmails = Array.from(emailEventMap.entries()).filter(([, s]) => s.size > 1).map(([e]) => e);
+  // Unique attendees (deduplicated by email across events)
+  const uniqueEmails = new Set(profiles.map((p) => p.email.toLowerCase()));
 
   // Looking for / can offer aggregates
   const lookingFor: Record<string, number> = {};
@@ -106,13 +167,20 @@ export default function DashboardPage() {
   const roles = Array.from(roleMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 12);
   const maxRole = Math.max(...roles.map(([, c]) => c), 1);
 
-  // Company breakdown
-  const companyMap = new Map<string, number>();
+  // Sector breakdown (auto-extracted + overrides)
+  const sectorMap = new Map<string, number>();
   for (const p of profiles) {
-    const company = p.company?.trim() || "Unknown";
-    companyMap.set(company, (companyMap.get(company) || 0) + 1);
+    const override = sectorOverrides[p.email];
+    const sectors = override ? [override] : extractSectors(p.what_building);
+    for (const s of sectors) {
+      sectorMap.set(s, (sectorMap.get(s) || 0) + 1);
+    }
   }
-  const companies = Array.from(companyMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 12);
+  const sectors = Array.from(sectorMap.entries()).sort((a, b) => b[1] - a[1]);
+  const maxSector = Math.max(...sectors.map(([, c]) => c), 1);
+
+  // All known sector names (for the dropdown)
+  const allSectorNames = [...new Set([...Object.keys(SECTOR_KEYWORDS), ...sectors.map(([s]) => s)])].sort();
 
   return (
     <div>
@@ -120,14 +188,15 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold text-[#000000] tracking-tight">Dashboard</h1>
       </div>
 
-      {/* Top metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
-        <StatBox label="Total Events" value={events.length} />
-        <StatBox label="Active" value={events.filter((e) => e.is_active).length} accent />
-        <StatBox label="Total Guests" value={totalGuests} />
-        <StatBox label="Registered" value={totalRegistered} accent />
-        <StatBox label="MatchUps" value={totalMatches} />
-        <StatBox label="Avg Conversion" value={`${avgConversion}%`} />
+      {/* Top metrics with tooltips */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-8">
+        <StatBox label="Events" value={events.length} hint="Total events created" />
+        <StatBox label="Active" value={events.filter((e) => e.is_active).length} accent hint="Events currently accepting registrations" />
+        <StatBox label="Guests" value={totalGuests} hint="Total invited across all events" />
+        <StatBox label="Registered" value={totalRegistered} accent hint="Total form submissions across all events" />
+        <StatBox label="Unique" value={uniqueEmails.size} hint="Unique people (deduplicated across events)" />
+        <StatBox label="MatchUps" value={totalMatches} hint="Total match connections generated" />
+        <StatBox label="Conversion" value={`${avgConversion}%`} hint="Average guest-to-registration rate" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -175,24 +244,50 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Repeat attendees */}
+        {/* Event Ideas */}
         <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider">Repeat Attendees</h3>
-            <span className="text-lg font-bold text-[#1d3d0f]">{repeatEmails.length}</span>
+          <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-4">
+            Event Ideas
+          </h3>
+          <div className="flex gap-2 mb-4">
+            <input
+              type="text"
+              value={newIdea}
+              onChange={(e) => setNewIdea(e.target.value)}
+              placeholder="Add an event idea..."
+              className="flex-1 text-sm px-3 py-2 rounded-lg border border-[#1d3d0f]/10 bg-white outline-none focus:ring-1 focus:ring-[#1d3d0f]/20 placeholder:text-[#1d3d0f]/35"
+              onKeyDown={(e) => e.key === "Enter" && handleAddIdea()}
+            />
+            <button
+              onClick={handleAddIdea}
+              disabled={addingIdea || !newIdea.trim()}
+              className="px-3 py-2 bg-[#1d3d0f] text-white rounded-lg text-sm font-medium hover:bg-black transition-colors disabled:opacity-40"
+            >
+              Add
+            </button>
           </div>
-          <p className="text-xs text-[#1d3d0f]/60 mb-3">People who registered for more than one event</p>
-          {repeatEmails.length > 0 ? (
-            <div className="space-y-1.5 max-h-48 overflow-y-auto">
-              {repeatEmails.map((email) => (
-                <div key={email} className="flex items-center gap-2 text-xs text-[#1d3d0f]/70">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#e8ff79] flex-shrink-0" />
-                  <span className="truncate">{email}</span>
+          {ideas.length > 0 ? (
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {ideas.map((idea) => (
+                <div key={idea.id} className="flex items-start gap-2 group">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#e8ff79] flex-shrink-0 mt-1.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-[#1d3d0f]/80">{idea.text}</p>
+                    <p className="text-[9px] text-[#1d3d0f]/35 mt-0.5">
+                      {new Date(idea.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteIdea(idea.id)}
+                    className="p-0.5 text-[#1d3d0f]/0 group-hover:text-[#1d3d0f]/30 hover:!text-red-500 transition-colors flex-shrink-0"
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-xs text-[#1d3d0f]/50 italic">No repeat attendees yet</p>
+            <p className="text-xs text-[#1d3d0f]/40 italic">No ideas yet. Add one above.</p>
           )}
         </div>
       </div>
@@ -201,7 +296,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Demand vs Supply */}
         <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-5">
-          <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-1">Demand vs Supply (All Events)</h3>
+          <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-1">Demand vs Supply</h3>
           <div className="flex items-center gap-4 mb-4">
             <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-[#1d3d0f]" /><span className="text-[10px] text-[#1d3d0f]/50">Looking for</span></div>
             <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-[#1d3d0f]/30" /><span className="text-[10px] text-[#1d3d0f]/50">Can offer</span></div>
@@ -229,7 +324,7 @@ export default function DashboardPage() {
 
         {/* Roles */}
         <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-5">
-          <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-4">Roles (All Events)</h3>
+          <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-4">Roles</h3>
           <div className="space-y-2.5">
             {roles.map(([role, count]) => (
               <div key={role} className="flex items-center gap-3">
@@ -243,14 +338,65 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Top Companies */}
+        {/* Sectors */}
         <div className="bg-[#fdfff0] rounded-xl border border-[#1d3d0f]/8 p-5">
-          <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-4">Top Companies</h3>
+          <h3 className="text-xs font-semibold text-[#1d3d0f]/50 uppercase tracking-wider mb-1">Sectors</h3>
+          <p className="text-[9px] text-[#1d3d0f]/35 mb-4">Auto-detected from &ldquo;What are you building?&rdquo; — click to edit</p>
           <div className="space-y-2">
-            {companies.map(([company, count]) => (
-              <div key={company} className="flex items-center justify-between py-1 border-b border-[#1d3d0f]/5 last:border-0">
-                <span className="text-xs text-[#1d3d0f] truncate mr-2">{company}</span>
-                <span className="text-[10px] font-semibold text-[#1d3d0f]/60 flex-shrink-0">{count}</span>
+            {sectors.map(([sector, count]) => (
+              <div key={sector} className="group">
+                {editingSector === sector ? (
+                  <div className="flex items-center gap-1.5">
+                    <select
+                      value={newSectorValue}
+                      onChange={(e) => setNewSectorValue(e.target.value)}
+                      className="flex-1 text-xs px-2 py-1 rounded border border-[#1d3d0f]/15 bg-white outline-none"
+                    >
+                      {allSectorNames.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      value={newSectorValue}
+                      onChange={(e) => setNewSectorValue(e.target.value)}
+                      placeholder="Or type new..."
+                      className="flex-1 text-xs px-2 py-1 rounded border border-[#1d3d0f]/15 bg-white outline-none"
+                    />
+                    <button
+                      onClick={() => {
+                        // Apply override to all profiles that had this sector
+                        const newOverrides = { ...sectorOverrides };
+                        for (const p of profiles) {
+                          const current = sectorOverrides[p.email] || extractSectors(p.what_building)[0] || "Other";
+                          if (current === sector) {
+                            newOverrides[p.email] = newSectorValue || sector;
+                          }
+                        }
+                        setSectorOverrides(newOverrides);
+                        setEditingSector(null);
+                      }}
+                      className="text-[10px] px-2 py-1 bg-[#1d3d0f] text-white rounded"
+                    >
+                      Apply
+                    </button>
+                    <button onClick={() => setEditingSector(null)} className="text-[10px] text-[#1d3d0f]/40 px-1">Cancel</button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => { setEditingSector(sector); setNewSectorValue(sector); }}
+                      className="text-[11px] text-[#1d3d0f] w-28 truncate flex-shrink-0 text-left hover:underline"
+                      title="Click to edit sector"
+                    >
+                      {sector}
+                    </button>
+                    <div className="flex-1 h-2.5 bg-[#1d3d0f]/5 rounded overflow-hidden">
+                      <div className="h-full bg-[#1d3d0f] rounded" style={{ width: `${(count / maxSector) * 100}%` }} />
+                    </div>
+                    <span className="text-[10px] text-[#1d3d0f]/50 w-6 text-right flex-shrink-0">{count}</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -260,11 +406,17 @@ export default function DashboardPage() {
   );
 }
 
-function StatBox({ label, value, accent }: { label: string; value: number | string; accent?: boolean }) {
+function StatBox({ label, value, accent, hint }: { label: string; value: number | string; accent?: boolean; hint?: string }) {
   return (
-    <div className={`rounded-xl border p-4 ${accent ? "bg-[#e8ff79]/30 border-[#e8ff79]/50" : "bg-[#fdfff0] border-[#1d3d0f]/8"}`}>
+    <div className={`rounded-xl border p-4 relative group ${accent ? "bg-[#e8ff79]/30 border-[#e8ff79]/50" : "bg-[#fdfff0] border-[#1d3d0f]/8"}`}>
       <p className="text-2xl font-bold text-[#000000] leading-none">{value}</p>
       <p className="text-[10px] text-[#1d3d0f]/60 mt-1.5">{label}</p>
+      {hint && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[#1d3d0f] text-white text-[10px] rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+          {hint}
+          <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1d3d0f]" />
+        </div>
+      )}
     </div>
   );
 }
